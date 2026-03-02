@@ -23,14 +23,17 @@ struct ChatView: View {
                             )
                         }
 
-                        if let toolName = viewModel.serviceActiveToolName {
-                            ToolUseIndicator(toolName: toolName)
+                        if !viewModel.coordinator.pipelineSteps.isEmpty {
+                            PipelineStatusView(steps: viewModel.coordinator.pipelineSteps)
+                                .padding(.vertical, 8)
                                 .transition(
                                     reduceMotion
                                         ? .opacity
                                         : .scale.combined(with: .opacity)
                                 )
-                        } else if viewModel.showTypingIndicator && viewModel.serviceStreamText.isEmpty {
+                        }
+
+                        if viewModel.showTypingIndicator && viewModel.serviceStreamText.isEmpty {
                             TypingIndicator()
                                 .transition(
                                     reduceMotion
@@ -52,7 +55,7 @@ struct ChatView: View {
             }
             .scrollPosition($scrollPosition)
             .defaultScrollAnchor(.bottom)
-            .animation(.spring(duration: 0.3, bounce: 0.15), value: viewModel.serviceActiveToolName)
+            .animation(.spring(duration: 0.3, bounce: 0.15), value: viewModel.coordinator.pipelineSteps.count)
             .animation(.spring(duration: 0.3, bounce: 0.15), value: viewModel.showTypingIndicator)
             .overlay {
                 if viewModel.showGreeting {

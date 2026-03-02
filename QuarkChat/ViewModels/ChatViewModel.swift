@@ -18,6 +18,7 @@ final class ChatViewModel {
     var greetingSubtitle: String?
     var showGreeting: Bool = true
 
+    let coordinator = MessageCoordinator()
     private let chatService = ChatService()
     private var conversation: Conversation?
     private var modelContext: ModelContext?
@@ -55,8 +56,7 @@ final class ChatViewModel {
 
     private func ensureSession() {
         guard !sessionCreated else { return }
-        let tools: [any Tool] = [WebSearchTool(), DateTimeTool()]
-        chatService.createSession(userProfile: userProfile, tools: tools)
+        chatService.createSession(userProfile: userProfile)
         sessionCreated = true
     }
 
@@ -85,24 +85,47 @@ final class ChatViewModel {
             await performCompaction()
         }
 
-        // Show typing indicator
-        showTypingIndicator = true
         isGenerating = true
 
+        // Build recent exchanges for classifier context
+        let recentExchanges = messages.suffix(6).map { msg in
+            (role: msg.role, content: msg.content)
+        }
+
+        // Find the last assistant message for conversation context
+        let lastAssistantMessage = messages.last(where: { $0.role == "assistant" })?.content
+
+        // Run pipeline
+        let pipelineOutput = await coordinator.process(
+            userMessage: text,
+            recentExchanges: recentExchanges,
+            userProfile: userProfile,
+            lastAssistantMessage: lastAssistantMessage
+        )
+
+        // Stream final response from main session
+        showTypingIndicator = true
+
         do {
-            let responseText = try await chatService.streamResponse(to: text)
+            let responseText = try await chatService.streamResponse(to: pipelineOutput.enrichedPrompt)
 
             showTypingIndicator = false
 
-            // Pick up any citations from the web search tool
-            let citations = await CitationStore.shared.take()
+            // Encode citations
             var citationsJSON: String?
-            if !citations.isEmpty, let data = try? JSONEncoder().encode(citations) {
+            if !pipelineOutput.citations.isEmpty,
+               let data = try? JSONEncoder().encode(pipelineOutput.citations) {
                 citationsJSON = String(data: data, encoding: .utf8)
             }
 
-            // Clear streaming state and append final message without animation.
-            // The user already watched the text stream in — no need for a second entrance.
+            // Encode pipeline steps
+            var pipelineStepsJSON: String?
+            if !pipelineOutput.pipelineSteps.isEmpty,
+               let data = try? JSONEncoder().encode(pipelineOutput.pipelineSteps) {
+                pipelineStepsJSON = String(data: data, encoding: .utf8)
+            }
+
+            // Clear streaming state and append final message without animation
             var noAnimation = Transaction(animation: .none)
             noAnimation.disablesAnimations = true
             withTransaction(noAnimation) {
@@ -113,12 +136,16 @@ final class ChatViewModel {
                     sortIndex: messages.count
                 )
                 assistantMessage.citationsJSON = citationsJSON
+                assistantMessage.pipelineStepsJSON = pipelineStepsJSON
                 assistantMessage.conversation = conversation
                 modelContext.insert(assistantMessage)
                 conversation.updatedAt = Date()
                 try? modelContext.save()
                 messages.append(assistantMessage)
             }
+
+            // Clear live pipeline steps now that they're persisted
+            coordinator.pipelineSteps = []
 
             // Generate title if first exchange
             if conversation.title == "New Chat" {
@@ -128,9 +155,11 @@ final class ChatViewModel {
             }
         } catch let error as LanguageModelSession.GenerationError {
             showTypingIndicator = false
+            coordinator.pipelineSteps = []
             handleGenerationError(error)
         } catch {
             showTypingIndicator = false
+            coordinator.pipelineSteps = []
             errorMessage = error.localizedDescription
         }
 
@@ -139,7 +168,6 @@ final class ChatViewModel {
     }
 
     func stopGenerating() {
-        // Foundation Models doesn't have a cancel API; we just stop observing
         isGenerating = false
         showTypingIndicator = false
     }
@@ -152,7 +180,6 @@ final class ChatViewModel {
             errorMessage = "Context limit reached. Starting fresh context..."
             Task {
                 await performCompaction()
-                // Recreate session with compacted context
                 sessionCreated = false
             }
         case .rateLimited:
@@ -170,8 +197,7 @@ final class ChatViewModel {
 
             // Recreate session with summary as context
             sessionCreated = false
-            let tools: [any Tool] = [WebSearchTool(), DateTimeTool()]
-            chatService.createSession(userProfile: userProfile, tools: tools)
+            chatService.createSession(userProfile: userProfile)
             sessionCreated = true
 
             // Send summary as context to new session
@@ -184,10 +210,6 @@ final class ChatViewModel {
     // Observe chat service state for UI updates
     var serviceStreamText: String {
         chatService.currentStreamText
-    }
-
-    var serviceActiveToolName: String? {
-        chatService.activeToolName
     }
 
     var serviceIsGenerating: Bool {

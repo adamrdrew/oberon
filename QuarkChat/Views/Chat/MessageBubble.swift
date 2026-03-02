@@ -14,6 +14,11 @@ struct MessageBubble: View {
             if isUser { Spacer(minLength: 60) }
 
             VStack(alignment: isUser ? .trailing : .leading, spacing: 6) {
+                if !isUser && !message.pipelineSteps.isEmpty {
+                    PipelineStatusView(steps: message.pipelineSteps, isCompact: true)
+                        .padding(.bottom, 16)
+                }
+
                 Group {
                     if isUser {
                         Text(message.content)

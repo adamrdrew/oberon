@@ -19,7 +19,7 @@ struct ConversationRow: View {
 
                 Spacer()
 
-                Text(conversation.updatedAt, style: .relative)
+                Text(conversation.updatedAt, format: .dateTime.month(.abbreviated).day())
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)

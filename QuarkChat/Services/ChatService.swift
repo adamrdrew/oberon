@@ -5,7 +5,6 @@ import FoundationModels
 @Observable
 final class ChatService {
     var currentStreamText: String = ""
-    var activeToolName: String?
     var isGenerating: Bool = false
 
     private var session: LanguageModelSession?
@@ -14,22 +13,18 @@ final class ChatService {
 
     func createSession(
         userProfile: UserProfile?,
-        tools: [any Tool],
         existingTranscript: Transcript? = nil
     ) {
         let instructions = buildInstructions(userProfile: userProfile)
 
         if let transcript = existingTranscript {
-            // Transcript already contains instructions from the original session
             session = LanguageModelSession(
                 model: SystemLanguageModel.default,
-                tools: tools,
                 transcript: transcript
             )
         } else {
             session = LanguageModelSession(
                 model: SystemLanguageModel.default,
-                tools: tools,
                 instructions: instructions
             )
         }
@@ -39,8 +34,12 @@ final class ChatService {
     func buildInstructions(userProfile: UserProfile?) -> String {
         var parts: [String] = []
         parts.append("You are Quark, a friendly, helpful AI assistant. Be concise and conversational.")
-        parts.append("You have tools. Use web_search for ANY question about current events, weather, news, sports scores, facts you're unsure about, or anything that benefits from up-to-date info. Use current_datetime when the user asks about the time or date.")
-        parts.append("ALWAYS use web_search rather than guessing when you don't know the answer.")
+        parts.append("When information is provided between --- markers, use it to answer naturally. Do not mention that information was provided to you.")
+
+        // Inject current date/time directly into instructions
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE, MMMM d, yyyy 'at' h:mm a"
+        parts.append("Current date and time: \(formatter.string(from: Date())).")
 
         parts.append("Do NOT address the user by name in your responses. Do NOT start messages with greetings. Just answer directly.")
 
@@ -72,21 +71,9 @@ final class ChatService {
 
         isGenerating = true
         currentStreamText = ""
-        activeToolName = nil
-
-        // Poll transcript for tool calls on a separate cadence,
-        // because the stream yields NO snapshots while a tool executes.
-        let pollTask = Task { @MainActor [weak self] in
-            while !Task.isCancelled {
-                self?.detectActiveToolUse()
-                try? await Task.sleep(for: .milliseconds(150))
-            }
-        }
 
         defer {
-            pollTask.cancel()
             isGenerating = false
-            activeToolName = nil
         }
 
         let stream = session.streamResponse(to: prompt)
@@ -99,29 +86,6 @@ final class ChatService {
 
         _ = try await stream.collect()
         return finalText
-    }
-
-    private func detectActiveToolUse() {
-        guard let transcript = session?.transcript else { return }
-        let entries = Array(transcript)
-
-        // Walk backward to find the most recent tool call without a matching output
-        for entry in entries.reversed() {
-            if case .toolOutput = entry {
-                activeToolName = nil
-                return
-            }
-            if case .toolCalls(let calls) = entry {
-                if let name = calls.first?.toolName, !name.isEmpty {
-                    activeToolName = name
-                }
-                return
-            }
-            if case .response = entry {
-                activeToolName = nil
-                return
-            }
-        }
     }
 
     // MARK: - Context Compaction
@@ -216,7 +180,6 @@ final class ChatService {
 
     func clearStreamingState() {
         currentStreamText = ""
-        activeToolName = nil
     }
 
     func invalidateSession() {

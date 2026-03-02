@@ -42,5 +42,10 @@ struct MessageInputBar: View {
         .glassEffect(in: .capsule)
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
+        .onChange(of: isGenerating) { wasGenerating, nowGenerating in
+            if wasGenerating && !nowGenerating {
+                isFocused = true
+            }
+        }
     }
 }

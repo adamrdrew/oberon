@@ -35,6 +35,21 @@ struct ConversationListView: View {
                     NavigationLink(value: conversation) {
                         ConversationRow(conversation: conversation)
                     }
+                    #if os(macOS)
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            withAnimation(.spring(duration: 0.35, bounce: 0.2)) {
+                                if appState.selectedConversation == conversation {
+                                    appState.selectedConversation = nil
+                                }
+                                modelContext.delete(conversation)
+                                try? modelContext.save()
+                            }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                    #endif
                 }
                 .onDelete { offsets in
                     withAnimation(.spring(duration: 0.35, bounce: 0.2)) {

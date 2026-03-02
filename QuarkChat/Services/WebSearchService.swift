@@ -27,6 +27,23 @@ actor WebSearchService {
         }
     }
 
+    func fetchPageText(url urlString: String) async -> String? {
+        guard let url = URL(string: urlString) else { return nil }
+
+        do {
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 10
+            request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
+
+            let (data, _) = try await URLSession.shared.data(for: request)
+            guard let html = String(data: data, encoding: .utf8) else { return nil }
+            let text = extractTextContent(from: html)
+            return text.isEmpty ? nil : text
+        } catch {
+            return nil
+        }
+    }
+
     func fetchAndSummarize(url urlString: String) async -> String? {
         guard let url = URL(string: urlString) else { return nil }
 
