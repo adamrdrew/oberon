@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct ActionButtonsView: View {
-    let actions: [PlaceAction]
-    var onExecute: (PlaceAction) -> Void
+    let actions: [RichAction]
+    var onExecute: (RichAction) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -20,10 +20,12 @@ struct ActionButtonsView: View {
                                 .font(.subheadline)
                                 .fontWeight(.medium)
 
-                            Text(action.placeName)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
+                            if !action.subtitle.isEmpty {
+                                Text(action.subtitle)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
                         }
 
                         Spacer()

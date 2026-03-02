@@ -5,8 +5,14 @@ struct MessageInputBar: View {
     let isGenerating: Bool
     let onSend: () -> Void
     let onStop: () -> Void
+    var speechService: SpeechService?
+    var onVoiceSend: ((String) -> Void)?
 
     @FocusState private var isFocused: Bool
+
+    private var isEmpty: Bool {
+        text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -18,25 +24,61 @@ struct MessageInputBar: View {
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .onSubmit {
-                    if !isGenerating && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    if !isGenerating && !isEmpty {
                         onSend()
                     }
                 }
 
-            Button {
-                if isGenerating {
+            if isGenerating {
+                // Stop button
+                Button {
                     onStop()
-                } else {
-                    onSend()
+                } label: {
+                    Image(systemName: "stop.fill")
+                        .font(.title2)
+                        .contentTransition(.symbolEffect(.replace))
                 }
-            } label: {
-                Image(systemName: isGenerating ? "stop.fill" : "arrow.up.circle.fill")
-                    .font(.title2)
-                    .contentTransition(.symbolEffect(.replace))
-                    .symbolEffect(.bounce, value: isGenerating)
+                .padding(.trailing, 8)
+            } else if let speechService, isEmpty {
+                // Mic button — shows when input is empty and speech is available
+                Button {
+                    if speechService.isRecording {
+                        let transcribed = speechService.stopRecording()
+                        if !transcribed.isEmpty {
+                            onVoiceSend?(transcribed)
+                        }
+                    } else {
+                        Task { await speechService.startRecording() }
+                    }
+                } label: {
+                    ZStack {
+                        if speechService.isRecording {
+                            Circle()
+                                .fill(.red.opacity(0.2))
+                                .frame(width: 36, height: 36)
+                                .scaleEffect(1 + CGFloat(speechService.audioLevel) * 0.5)
+                                .animation(.easeOut(duration: 0.1), value: speechService.audioLevel)
+                        }
+
+                        Image(systemName: speechService.isRecording ? "mic.fill" : "mic")
+                            .font(.title2)
+                            .foregroundStyle(speechService.isRecording ? .red : .primary)
+                            .symbolEffect(.variableColor, isActive: speechService.isRecording)
+                    }
+                }
+                .padding(.trailing, 8)
+            } else {
+                // Send button
+                Button {
+                    onSend()
+                } label: {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.title2)
+                        .contentTransition(.symbolEffect(.replace))
+                }
+                .disabled(isEmpty)
+                .padding(.trailing, 8)
             }
-            .disabled(!isGenerating && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            .padding(.trailing, 8)
         }
         .padding(.vertical, 4)
         .glassEffect(in: .capsule)
@@ -45,6 +87,19 @@ struct MessageInputBar: View {
         .onChange(of: isGenerating) { wasGenerating, nowGenerating in
             if wasGenerating && !nowGenerating {
                 isFocused = true
+            }
+        }
+        // Show live transcription below
+        .overlay(alignment: .top) {
+            if let speechService, speechService.isRecording, !speechService.transcribedText.isEmpty {
+                Text(speechService.transcribedText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 4)
+                    .glassEffect(in: .capsule)
+                    .offset(y: -36)
+                    .transition(.opacity)
             }
         }
     }

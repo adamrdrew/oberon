@@ -4,6 +4,11 @@ import SwiftUI
 import SwiftData
 import FoundationModels
 import MapKit
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 @Observable
 @MainActor
@@ -18,13 +23,22 @@ final class ChatViewModel {
     var greetingHeadline: String?
     var greetingSubtitle: String?
     var showGreeting: Bool = true
+    var scrollTargetMessageID: UUID?
 
     let coordinator = MessageCoordinator()
+    let ttsService = TTSService()
+    let speechService = SpeechService()
     private let chatService = ChatService()
     private var conversation: Conversation?
     private var modelContext: ModelContext?
     private var userProfile: UserProfile?
-    private var sessionCreated = false
+
+    /// Suggested replies from the latest assistant message
+    var currentSuggestedReplies: [SuggestedReply]? {
+        messages.last(where: { $0.role == "assistant" })?.suggestedReplies.isEmpty == false
+            ? messages.last(where: { $0.role == "assistant" })?.suggestedReplies
+            : nil
+    }
 
     func configure(conversation: Conversation, modelContext: ModelContext, userProfile: UserProfile?) {
         self.conversation = conversation
@@ -33,7 +47,6 @@ final class ChatViewModel {
         self.userBubbleColor = userProfile?.favoriteColorHex ?? "#007AFF"
         loadMessages()
 
-        // Show greeting overlay for new (empty) conversations
         if messages.isEmpty {
             showGreeting = true
             Task {
@@ -55,12 +68,6 @@ final class ChatViewModel {
         greetingSubtitle = result.subtitle
     }
 
-    private func ensureSession() {
-        guard !sessionCreated else { return }
-        chatService.createSession(userProfile: userProfile)
-        sessionCreated = true
-    }
-
     func sendMessage() async {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !isGenerating, let conversation, let modelContext else { return }
@@ -68,7 +75,6 @@ final class ChatViewModel {
         inputText = ""
         errorMessage = nil
         showGreeting = false
-        ensureSession()
 
         // Persist user message
         let nextIndex = messages.count
@@ -77,14 +83,8 @@ final class ChatViewModel {
         modelContext.insert(userMessage)
         conversation.updatedAt = Date()
         try? modelContext.save()
-        withAnimation(.spring(duration: 0.35, bounce: 0.2)) {
-            messages.append(userMessage)
-        }
-
-        // Check compaction
-        if chatService.needsCompaction(messages: messages) {
-            await performCompaction()
-        }
+        messages.append(userMessage)
+        scrollTargetMessageID = userMessage.id
 
         isGenerating = true
 
@@ -93,7 +93,7 @@ final class ChatViewModel {
             (role: msg.role, content: msg.content)
         }
 
-        // Find the last assistant message for conversation context
+        // Find the last assistant message for clipboard processor
         let lastAssistantMessage = messages.last(where: { $0.role == "assistant" })?.content
 
         // Run pipeline
@@ -104,81 +104,104 @@ final class ChatViewModel {
             lastAssistantMessage: lastAssistantMessage
         )
 
-        // Stream final response from main session
+        // Assemble fresh-session prompt
+        let assembled = PromptAssembler.assemble(
+            conversationSummary: conversation.summary,
+            userProfile: userProfile,
+            enrichedPrompt: pipelineOutput.enrichedPrompt,
+            intent: pipelineOutput.intent
+        )
+
+        // Stream response from fresh session
         showTypingIndicator = true
 
+        var responseText: String?
         do {
-            let responseText = try await chatService.streamResponse(to: pipelineOutput.enrichedPrompt)
-
-            showTypingIndicator = false
-
-            // Encode citations
-            var citationsJSON: String?
-            if !pipelineOutput.citations.isEmpty,
-               let data = try? JSONEncoder().encode(pipelineOutput.citations) {
-                citationsJSON = String(data: data, encoding: .utf8)
-            }
-
-            // Encode pipeline steps
-            var pipelineStepsJSON: String?
-            if !pipelineOutput.pipelineSteps.isEmpty,
-               let data = try? JSONEncoder().encode(pipelineOutput.pipelineSteps) {
-                pipelineStepsJSON = String(data: data, encoding: .utf8)
-            }
-
-            // Encode actions
-            var actionsJSON: String?
-            if !pipelineOutput.actions.isEmpty,
-               let data = try? JSONEncoder().encode(pipelineOutput.actions) {
-                actionsJSON = String(data: data, encoding: .utf8)
-            }
-
-            // Clear streaming state and append final message without animation
-            var noAnimation = Transaction(animation: .none)
-            noAnimation.disablesAnimations = true
-            withTransaction(noAnimation) {
-                chatService.clearStreamingState()
-                let assistantMessage = Message(
-                    content: responseText,
-                    role: "assistant",
-                    sortIndex: messages.count
-                )
-                assistantMessage.citationsJSON = citationsJSON
-                assistantMessage.pipelineStepsJSON = pipelineStepsJSON
-                assistantMessage.actionsJSON = actionsJSON
-                assistantMessage.conversation = conversation
-                modelContext.insert(assistantMessage)
-                conversation.updatedAt = Date()
-                try? modelContext.save()
-                messages.append(assistantMessage)
-            }
-
-            // Clear live pipeline steps now that they're persisted
-            coordinator.pipelineSteps = []
-
-            // Auto-execute primary action after message is persisted
-            if let primaryAction = pipelineOutput.actions.first {
-                executeAction(primaryAction)
-            }
-
-            // Generate title if first exchange
-            if conversation.title == "New Chat" {
-                let title = await chatService.generateTitle(firstUserMessage: text)
-                conversation.title = title
-                try? modelContext.save()
-            }
+            responseText = try await chatService.streamResponse(
+                instructions: assembled.instructions,
+                prompt: assembled.prompt
+            )
         } catch let error as LanguageModelSession.GenerationError {
-            showTypingIndicator = false
-            coordinator.pipelineSteps = []
-            handleGenerationError(error)
+            switch error {
+            case .exceededContextWindowSize:
+                errorMessage = "That was too complex. Try a shorter question."
+            case .guardrailViolation:
+                errorMessage = "I can't help with that."
+            default:
+                errorMessage = "Something went wrong."
+            }
         } catch {
-            showTypingIndicator = false
+            errorMessage = "Something went wrong."
+        }
+
+        showTypingIndicator = false
+
+        guard let responseText else {
             coordinator.pipelineSteps = []
-            errorMessage = error.localizedDescription
+            isGenerating = false
+            chatService.clearStreamingState()
+            return
+        }
+
+        // Encode all metadata
+        let citationsJSON = encodeJSON(pipelineOutput.citations)
+        let pipelineStepsJSON = encodeJSON(pipelineOutput.pipelineSteps)
+        let actionsJSON = encodeJSON(pipelineOutput.actions)
+        let richContentJSON = encodeJSON(pipelineOutput.richContent)
+        let suggestedRepliesJSON = encodeJSON(pipelineOutput.suggestedReplies)
+
+        // Clear streaming state and append final message without animation
+        var noAnimation = Transaction(animation: .none)
+        noAnimation.disablesAnimations = true
+        withTransaction(noAnimation) {
+            chatService.clearStreamingState()
+            let assistantMessage = Message(
+                content: responseText,
+                role: "assistant",
+                sortIndex: messages.count
+            )
+            assistantMessage.citationsJSON = citationsJSON
+            assistantMessage.pipelineStepsJSON = pipelineStepsJSON
+            assistantMessage.actionsJSON = actionsJSON
+            assistantMessage.richContentJSON = richContentJSON
+            assistantMessage.suggestedRepliesJSON = suggestedRepliesJSON
+            assistantMessage.conversation = conversation
+            modelContext.insert(assistantMessage)
+            conversation.updatedAt = Date()
+            try? modelContext.save()
+            messages.append(assistantMessage)
+        }
+
+        // Clear live pipeline steps now that they're persisted
+        coordinator.pipelineSteps = []
+
+        // Auto-execute primary action after message is persisted
+        if let primaryAction = pipelineOutput.actions.first, primaryAction.autoExecutes {
+            executeAction(primaryAction)
+        }
+
+        // Generate title if first exchange
+        if conversation.title == "New Chat" {
+            let title = await chatService.generateTitle(firstUserMessage: text)
+            conversation.title = title
+            try? modelContext.save()
         }
 
         isGenerating = false
         chatService.clearStreamingState()
+
+        // Update rolling summary in background
+        let currentSummary = conversation.summary
+        let finalResponse = responseText
+        Task {
+            let updated = await chatService.updateRollingSummary(
+                existing: currentSummary,
+                userMessage: text,
+                response: finalResponse
+            )
+            conversation.summary = updated
+            try? modelContext.save()
+        }
     }
 
     func stopGenerating() {
@@ -186,32 +209,71 @@ final class ChatViewModel {
         showTypingIndicator = false
     }
 
-    func executeAction(_ action: PlaceAction) {
+    // MARK: - Action Execution
+
+    func executeAction(_ action: RichAction) {
         switch action.type {
         case .directions:
             if let lat = action.latitude, let lon = action.longitude {
                 let coordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
                 let placemark = MKPlacemark(coordinate: coordinate)
                 let mapItem = MKMapItem(placemark: placemark)
-                mapItem.name = action.placeName
+                mapItem.name = action.subtitle
                 mapItem.openInMaps(launchOptions: [
                     MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving
                 ])
-            } else if let url = URL(string: action.urlString) {
+            } else if let urlString = action.urlString, let url = URL(string: urlString) {
                 openURL(url)
             }
 
-        case .call:
-            if let url = URL(string: action.urlString) {
+        case .call, .callContact, .openWebsite, .sendEmail, .messageContact,
+             .openReminders, .openCalendar, .openTimer, .openTranslation:
+            if let urlString = action.urlString, let url = URL(string: urlString) {
                 openURL(url)
             }
 
-        case .openWebsite:
-            if let url = URL(string: action.urlString) {
+        case .openApp:
+            if let urlString = action.urlString, let url = URL(string: urlString) {
                 openURL(url)
             }
+
+        case .copyToClipboard:
+            if let text = action.payload?["text"] {
+                copyToClipboard(text)
+            }
+
+        case .playMusic:
+            // Music playback is handled by MusicProcessor directly
+            break
+
+        case .shareContent:
+            // Share sheet would be handled via ChatView presentation
+            break
         }
     }
+
+    // MARK: - TTS
+
+    func toggleSpeech(for message: Message) {
+        ttsService.speak(text: message.content, messageID: message.id)
+    }
+
+    // MARK: - Copy
+
+    func copyMessage(_ message: Message) {
+        copyToClipboard(message.content)
+    }
+
+    private func copyToClipboard(_ text: String) {
+        #if os(macOS)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        #else
+        UIPasteboard.general.string = text
+        #endif
+    }
+
+    // MARK: - Helpers
 
     private func openURL(_ url: URL) {
         #if os(macOS)
@@ -221,39 +283,10 @@ final class ChatViewModel {
         #endif
     }
 
-    private func handleGenerationError(_ error: LanguageModelSession.GenerationError) {
-        switch error {
-        case .guardrailViolation:
-            errorMessage = "I can't help with that request."
-        case .exceededContextWindowSize:
-            errorMessage = "Context limit reached. Starting fresh context..."
-            Task {
-                await performCompaction()
-                sessionCreated = false
-            }
-        case .rateLimited:
-            errorMessage = "Too many requests. Please wait a moment."
-        default:
-            errorMessage = "Something went wrong. Please try again."
-        }
-    }
-
-    private func performCompaction() async {
-        guard let conversation else { return }
-
-        if let summary = await chatService.compactContext(messages: messages, userProfile: userProfile) {
-            conversation.summary = summary
-
-            // Recreate session with summary as context
-            sessionCreated = false
-            chatService.createSession(userProfile: userProfile)
-            sessionCreated = true
-
-            // Send summary as context to new session
-            _ = try? await chatService.streamResponse(
-                to: "Previous conversation summary: \(summary)\nContinue the conversation naturally."
-            )
-        }
+    private func encodeJSON<T: Encodable>(_ value: [T]) -> String? {
+        guard !value.isEmpty,
+              let data = try? JSONEncoder().encode(value) else { return nil }
+        return String(data: data, encoding: .utf8)
     }
 
     // Observe chat service state for UI updates

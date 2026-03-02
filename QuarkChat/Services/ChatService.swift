@@ -7,74 +7,22 @@ final class ChatService {
     var currentStreamText: String = ""
     var isGenerating: Bool = false
 
-    private var session: LanguageModelSession?
-
-    // MARK: - Session Management
-
-    func createSession(
-        userProfile: UserProfile?,
-        existingTranscript: Transcript? = nil
-    ) {
-        let instructions = buildInstructions(userProfile: userProfile)
-
-        if let transcript = existingTranscript {
-            session = LanguageModelSession(
-                model: SystemLanguageModel.default,
-                transcript: transcript
-            )
-        } else {
-            session = LanguageModelSession(
-                model: SystemLanguageModel.default,
-                instructions: instructions
-            )
-        }
-        session?.prewarm()
-    }
-
-    func buildInstructions(userProfile: UserProfile?) -> String {
-        var parts: [String] = []
-        parts.append("You are Quark, a friendly, helpful AI assistant. Be concise and conversational.")
-        parts.append("When information is provided between --- markers, use it to answer naturally. Do not mention that information was provided to you.")
-
-        // Inject current date/time directly into instructions
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE, MMMM d, yyyy 'at' h:mm a"
-        parts.append("Current date and time: \(formatter.string(from: Date())).")
-
-        parts.append("Do NOT address the user by name in your responses. Do NOT start messages with greetings. Just answer directly.")
-
-        if let profile = userProfile {
-            if !profile.name.isEmpty {
-                parts.append("The user's name is \(profile.name) (for your reference only — do not use it in responses).")
-            }
-            if !profile.location.isEmpty {
-                parts.append("They're in \(profile.location).")
-            }
-            if !profile.aboutMe.isEmpty {
-                parts.append("About them: \(profile.aboutMe)")
-            }
-            if !profile.responsePreference.isEmpty {
-                parts.append("Response style: \(profile.responsePreference)")
-            }
-        }
-
-        return parts.joined(separator: " ")
-    }
-
-    // MARK: - Streaming Response
+    // MARK: - Streaming Response (fresh session per turn)
 
     @MainActor
-    func streamResponse(to prompt: String) async throws -> String {
-        guard let session else {
-            throw ChatError.sessionNotCreated
-        }
-
+    func streamResponse(instructions: String, prompt: String) async throws -> String {
         isGenerating = true
         currentStreamText = ""
 
         defer {
             isGenerating = false
         }
+
+        let model = SystemLanguageModel(guardrails: .permissiveContentTransformations)
+        let session = LanguageModelSession(
+            model: model,
+            instructions: instructions
+        )
 
         let stream = session.streamResponse(to: prompt)
         var finalText = ""
@@ -88,29 +36,35 @@ final class ChatService {
         return finalText
     }
 
-    // MARK: - Context Compaction
+    // MARK: - Rolling Summary
 
-    func compactContext(messages: [Message], userProfile: UserProfile?) async -> String? {
-        let compactionSession = LanguageModelSession(
-            instructions: "Summarize the following conversation in 2-3 sentences. Focus on key topics, decisions, and user preferences."
+    func updateRollingSummary(
+        existing: String,
+        userMessage: String,
+        response: String
+    ) async -> String {
+        let session = LanguageModelSession(
+            instructions: "Update the conversation summary. Under 100 words. Capture the topic, key facts, and compress the last 2-3 Q&A pairs."
         )
 
-        let messageText = messages.prefix(20).map { msg in
-            "\(msg.role): \(msg.content)"
-        }.joined(separator: "\n")
+        let cappedUser = String(userMessage.prefix(400))
+        let cappedResponse = String(response.prefix(400))
+        let cappedExisting = TokenBudget.capConversationContext(existing)
+
+        let prompt: String
+        if cappedExisting.isEmpty {
+            prompt = "Create a summary for this exchange:\nUser: \(cappedUser)\nAssistant: \(cappedResponse)"
+        } else {
+            prompt = "Current summary: \(cappedExisting)\n\nNew exchange:\nUser: \(cappedUser)\nAssistant: \(cappedResponse)\n\nUpdate the summary."
+        }
 
         do {
-            let response = try await compactionSession.respond(to: messageText)
-            return response.content
+            let result = try await session.respond(to: prompt)
+            let summary = result.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            return String(summary.prefix(TokenBudget.conversationContextCap))
         } catch {
-            return nil
+            return existing
         }
-    }
-
-    func needsCompaction(messages: [Message]) -> Bool {
-        let totalChars = messages.reduce(0) { $0 + $1.content.count }
-        let estimatedTokens = totalChars / 4
-        return estimatedTokens > 2000 || messages.count > 16
     }
 
     // MARK: - Utility Sessions
@@ -181,20 +135,13 @@ final class ChatService {
     func clearStreamingState() {
         currentStreamText = ""
     }
-
-    func invalidateSession() {
-        session = nil
-    }
 }
 
 enum ChatError: LocalizedError {
-    case sessionNotCreated
     case modelUnavailable
 
     var errorDescription: String? {
         switch self {
-        case .sessionNotCreated:
-            return "Chat session not initialized."
         case .modelUnavailable:
             return "The language model is not available."
         }

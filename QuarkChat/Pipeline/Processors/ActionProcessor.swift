@@ -30,7 +30,9 @@ struct ActionProcessor: Sendable {
             return DomainResult(
                 enrichmentText: enrichmentText,
                 citations: [],
-                actions: actions
+                actions: actions,
+                richContent: [],
+                suggestedReplies: SuggestedReply.forPlaceAction()
             )
         } catch {
             return .empty
@@ -39,7 +41,7 @@ struct ActionProcessor: Sendable {
 
     // MARK: - Action Type Detection
 
-    private func detectActionType(from query: String) -> PlaceActionType {
+    private func detectActionType(from query: String) -> RichActionType {
         let lower = query.lowercased()
 
         let callKeywords = ["call", "phone", "dial", "ring"]
@@ -103,20 +105,20 @@ struct ActionProcessor: Sendable {
 
     // MARK: - Build Actions from MKMapItem
 
-    private func buildActions(from item: MKMapItem, requestedType: PlaceActionType) -> [PlaceAction] {
+    private func buildActions(from item: MKMapItem, requestedType: RichActionType) -> [RichAction] {
         let name = item.name ?? "Unknown Place"
         let lat = item.placemark.coordinate.latitude
         let lon = item.placemark.coordinate.longitude
 
-        var actions: [PlaceAction] = []
+        var actions: [RichAction] = []
 
         // Directions — always available
         let encodedName = name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? name
         let directionsURL = "maps://?daddr=\(lat),\(lon)&q=\(encodedName)"
-        actions.append(PlaceAction(
+        actions.append(RichAction(
             type: .directions,
             label: "Get Directions",
-            placeName: name,
+            subtitle: name,
             urlString: directionsURL,
             latitude: lat,
             longitude: lon
@@ -125,20 +127,20 @@ struct ActionProcessor: Sendable {
         // Call — only if phone number exists
         if let phone = item.phoneNumber, !phone.isEmpty {
             let digits = phone.filter { $0.isNumber || $0 == "+" }
-            actions.append(PlaceAction(
+            actions.append(RichAction(
                 type: .call,
                 label: "Call",
-                placeName: name,
+                subtitle: name,
                 urlString: "tel:\(digits)"
             ))
         }
 
         // Website — only if URL exists
         if let url = item.url {
-            actions.append(PlaceAction(
+            actions.append(RichAction(
                 type: .openWebsite,
                 label: "Open Website",
-                placeName: name,
+                subtitle: name,
                 urlString: url.absoluteString
             ))
         }
@@ -155,11 +157,10 @@ struct ActionProcessor: Sendable {
 
     // MARK: - Enrichment Text
 
-    private func buildEnrichmentText(item: MKMapItem, actions: [PlaceAction]) -> String {
+    private func buildEnrichmentText(item: MKMapItem, actions: [RichAction]) -> String {
         let name = item.name ?? "Unknown Place"
         var parts: [String] = []
 
-        // Address
         if let placemark = item.placemark as? MKPlacemark {
             let addressParts = [
                 placemark.subThoroughfare,
@@ -187,7 +188,7 @@ struct ActionProcessor: Sendable {
         case .directions: actionVerb = "Opening directions to"
         case .call: actionVerb = "Calling"
         case .openWebsite: actionVerb = "Opening website for"
-        case .none: actionVerb = "Found"
+        default: actionVerb = "Found"
         }
 
         let details = parts.isEmpty ? "" : "\n\(parts.joined(separator: "\n"))"

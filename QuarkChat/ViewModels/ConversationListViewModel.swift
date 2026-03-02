@@ -35,4 +35,10 @@ final class ConversationListViewModel {
             deleteConversation(conversations[index], modelContext: modelContext, appState: appState)
         }
     }
+
+    func deleteConversations(withIDs ids: Set<UUID>, from conversations: [Conversation], modelContext: ModelContext, appState: AppState) {
+        for conversation in conversations where ids.contains(conversation.id) {
+            deleteConversation(conversation, modelContext: modelContext, appState: appState)
+        }
+    }
 }

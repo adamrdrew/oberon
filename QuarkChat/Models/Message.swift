@@ -17,6 +17,8 @@ class Message {
     var citationsJSON: String?
     var pipelineStepsJSON: String?
     var actionsJSON: String?
+    var richContentJSON: String?
+    var suggestedRepliesJSON: String?
 
     var citations: [Citation] {
         guard let json = citationsJSON, let data = json.data(using: .utf8) else { return [] }
@@ -28,9 +30,27 @@ class Message {
         return (try? JSONDecoder().decode([PipelineStep].self, from: data)) ?? []
     }
 
-    var actions: [PlaceAction] {
+    /// Decodes actions — tries RichAction first, falls back to PlaceAction with mapping
+    var actions: [RichAction] {
         guard let json = actionsJSON, let data = json.data(using: .utf8) else { return [] }
-        return (try? JSONDecoder().decode([PlaceAction].self, from: data)) ?? []
+        if let rich = try? JSONDecoder().decode([RichAction].self, from: data) {
+            return rich
+        }
+        // Backward compatibility: decode legacy PlaceAction and convert
+        if let legacy = try? JSONDecoder().decode([PlaceAction].self, from: data) {
+            return legacy.map { RichAction(from: $0) }
+        }
+        return []
+    }
+
+    var richContent: [RichContent] {
+        guard let json = richContentJSON, let data = json.data(using: .utf8) else { return [] }
+        return (try? JSONDecoder().decode([RichContent].self, from: data)) ?? []
+    }
+
+    var suggestedReplies: [SuggestedReply] {
+        guard let json = suggestedRepliesJSON, let data = json.data(using: .utf8) else { return [] }
+        return (try? JSONDecoder().decode([SuggestedReply].self, from: data)) ?? []
     }
 
     var conversation: Conversation?

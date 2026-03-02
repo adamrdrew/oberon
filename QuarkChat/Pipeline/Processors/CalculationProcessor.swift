@@ -31,7 +31,9 @@ struct CalculationProcessor: Sendable {
             return DomainResult(
                 enrichmentText: "\(expr) = \(formatted)",
                 citations: [],
-                actions: []
+                actions: [],
+                richContent: [],
+                suggestedReplies: SuggestedReply.forCalculation()
             )
         } catch {
             return .empty

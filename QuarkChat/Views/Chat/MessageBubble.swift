@@ -4,7 +4,10 @@ import MarkdownUI
 struct MessageBubble: View {
     let message: Message
     var userColor: Color = .blue
-    var onActionExecute: ((PlaceAction) -> Void)?
+    var onActionExecute: ((RichAction) -> Void)?
+    var onSpeakToggle: ((Message) -> Void)?
+    var onCopy: ((Message) -> Void)?
+    var isSpeaking: Bool = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -14,10 +17,9 @@ struct MessageBubble: View {
         HStack {
             if isUser { Spacer(minLength: 60) }
 
-            VStack(alignment: isUser ? .trailing : .leading, spacing: 6) {
+            VStack(alignment: isUser ? .trailing : .leading, spacing: 14) {
                 if !isUser && !message.pipelineSteps.isEmpty {
                     PipelineStatusView(steps: message.pipelineSteps, isCompact: true)
-                        .padding(.bottom, 16)
                 }
 
                 Group {
@@ -35,6 +37,15 @@ struct MessageBubble: View {
                     in: .rect(cornerRadius: 18)
                 )
 
+                // Rich content cards — extra spacing to avoid glass blending
+                if !isUser && !message.richContent.isEmpty {
+                    VStack(spacing: 10) {
+                        ForEach(message.richContent) { content in
+                            RichContentCardView(content: content)
+                        }
+                    }
+                }
+
                 if !isUser && !message.citations.isEmpty {
                     CitationLinksView(citations: message.citations)
                 }
@@ -42,6 +53,28 @@ struct MessageBubble: View {
                 if !isUser && !message.actions.isEmpty {
                     ActionButtonsView(actions: message.actions) { action in
                         onActionExecute?(action)
+                    }
+                }
+
+                // Utility row: TTS + Copy for assistant messages
+                if !isUser && message.isComplete {
+                    HStack(spacing: 12) {
+                        Button {
+                            onSpeakToggle?(message)
+                        } label: {
+                            Image(systemName: isSpeaking ? "speaker.wave.2.fill" : "speaker.wave.2")
+                                .font(.caption)
+                                .symbolEffect(.variableColor, isActive: isSpeaking)
+                        }
+                        .buttonStyle(.glass)
+
+                        Button {
+                            onCopy?(message)
+                        } label: {
+                            Image(systemName: "doc.on.doc")
+                                .font(.caption)
+                        }
+                        .buttonStyle(.glass)
                     }
                 }
 

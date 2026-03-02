@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
     @Environment(AppState.self) private var appState
 
     var body: some View {
@@ -34,6 +35,12 @@ struct ContentView: View {
         }
         .task {
             appState.checkAvailability()
+            if appState.isModelAvailable && appState.selectedConversation == nil {
+                let conversation = Conversation()
+                modelContext.insert(conversation)
+                try? modelContext.save()
+                appState.selectedConversation = conversation
+            }
         }
     }
 }
