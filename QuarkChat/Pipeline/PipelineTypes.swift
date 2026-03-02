@@ -8,6 +8,7 @@ enum MessageIntent: String, Codable, Sendable {
     case factualLookup = "factual_lookup"
     case calculation
     case geoSearch = "geo_search"
+    case action
 }
 
 // MARK: - Pipeline Step Tracking
@@ -17,6 +18,7 @@ enum StepCategory: String, Codable, Sendable {
     case webSearch
     case calculation
     case geoSearch
+    case action
     case composition
 
     var icon: String {
@@ -25,6 +27,7 @@ enum StepCategory: String, Codable, Sendable {
         case .webSearch: return "globe"
         case .calculation: return "function"
         case .geoSearch: return "map"
+        case .action: return "arrow.up.forward.app"
         case .composition: return "text.page"
         }
     }
@@ -35,6 +38,7 @@ enum StepCategory: String, Codable, Sendable {
         case .webSearch: return .blue
         case .calculation: return .purple
         case .geoSearch: return .green
+        case .action: return .orange
         case .composition: return .green
         }
     }
@@ -68,8 +72,9 @@ struct PipelineStep: Codable, Identifiable, Sendable {
 struct DomainResult: Sendable {
     let enrichmentText: String
     let citations: [Citation]
+    let actions: [PlaceAction]
 
-    static let empty = DomainResult(enrichmentText: "", citations: [])
+    static let empty = DomainResult(enrichmentText: "", citations: [], actions: [])
 }
 
 struct ClassificationResult: Sendable {
@@ -80,5 +85,6 @@ struct ClassificationResult: Sendable {
 struct PipelineOutput: Sendable {
     let enrichedPrompt: String
     let citations: [Citation]
+    let actions: [PlaceAction]
     let pipelineSteps: [PipelineStep]
 }

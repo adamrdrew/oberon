@@ -16,6 +16,7 @@ class Message {
     var toolOutput: String?
     var citationsJSON: String?
     var pipelineStepsJSON: String?
+    var actionsJSON: String?
 
     var citations: [Citation] {
         guard let json = citationsJSON, let data = json.data(using: .utf8) else { return [] }
@@ -25,6 +26,11 @@ class Message {
     var pipelineSteps: [PipelineStep] {
         guard let json = pipelineStepsJSON, let data = json.data(using: .utf8) else { return [] }
         return (try? JSONDecoder().decode([PipelineStep].self, from: data)) ?? []
+    }
+
+    var actions: [PlaceAction] {
+        guard let json = actionsJSON, let data = json.data(using: .utf8) else { return [] }
+        return (try? JSONDecoder().decode([PlaceAction].self, from: data)) ?? []
     }
 
     var conversation: Conversation?

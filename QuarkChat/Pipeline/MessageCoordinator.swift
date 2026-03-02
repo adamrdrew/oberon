@@ -12,6 +12,7 @@ final class MessageCoordinator {
     private let webSearchProcessor = WebSearchProcessor()
     private let calculationProcessor = CalculationProcessor()
     private let geoSearchProcessor = GeoSearchProcessor()
+    private let actionProcessor = ActionProcessor()
 
     func process(
         userMessage: String,
@@ -38,6 +39,7 @@ final class MessageCoordinator {
             return PipelineOutput(
                 enrichedPrompt: userMessage,
                 citations: [],
+                actions: [],
                 pipelineSteps: pipelineSteps
             )
         }
@@ -73,6 +75,7 @@ final class MessageCoordinator {
         return PipelineOutput(
             enrichedPrompt: enrichedPrompt,
             citations: domainResult.citations,
+            actions: domainResult.actions,
             pipelineSteps: pipelineSteps
         )
     }
@@ -100,13 +103,17 @@ final class MessageCoordinator {
             Classify the user's message into one category. Rewrite it as a self-contained query.
 
             Categories:
+            - action: User wants to DO something with a specific place — get directions, \
+            call, open website, navigate. Keywords: "directions", "navigate", "call", \
+            "phone", "website", "open", "take me to", "drive to", "how do I get to"
             - geo_search: ANY question about finding places, stores, restaurants, shops, services, \
             or locations. Keywords: "nearby", "closest", "near me", "where is", "find a", place names.
             - calculation: math, percentages, unit conversions, arithmetic
             - factual_lookup: facts, news, weather, how-to, history, science, explanations
             - passthrough: greetings, chitchat, opinions, creative writing
 
-            Choose geo_search if the user wants to FIND or LOCATE a physical place or business. \
+            Choose action if the user wants to ACT on a specific place (directions, call, website). \
+            Choose geo_search if the user wants to FIND or LOCATE places. \
             Rewrite the query to be self-contained using conversation context. \
             If passthrough, copy as-is.
             """
@@ -151,6 +158,11 @@ final class MessageCoordinator {
                 query: query,
                 userLocation: userProfile?.location
             )
+        case .action:
+            return await actionProcessor.process(
+                query: query,
+                userLocation: userProfile?.location
+            )
         case .passthrough:
             return .empty
         }
@@ -176,6 +188,8 @@ final class MessageCoordinator {
             header = "Calculation result:"
         case .geoSearch:
             header = "Relevant places found:"
+        case .action:
+            header = "Action information:"
         case .passthrough:
             return originalMessage
         }
@@ -190,6 +204,13 @@ final class MessageCoordinator {
             contextNote = "\nConversation context (your previous response): \(truncated)\n"
         }
 
+        let footer: String
+        if intent == .action {
+            footer = "The action above has ALREADY been performed successfully. Confirm what was done in a brief, friendly message. Include the place details. Do NOT say you can't do it — it's already done."
+        } else {
+            footer = "Prioritize our conversation history. Use the supplementary info above only where it adds value. Answer naturally."
+        }
+
         return """
         \(originalMessage)
         \(contextNote)
@@ -197,7 +218,7 @@ final class MessageCoordinator {
         \(header)
         \(domainResult.enrichmentText)
         ---
-        Prioritize our conversation history. Use the supplementary info above only where it adds value. Answer naturally.
+        \(footer)
         """
     }
 
@@ -232,6 +253,7 @@ final class MessageCoordinator {
         case .factualLookup: return (.webSearch, "Searching the web...")
         case .calculation: return (.calculation, "Doing the math...")
         case .geoSearch: return (.geoSearch, "Consulting the map...")
+        case .action: return (.action, "Preparing action...")
         case .passthrough: return (.analysis, "Processing...")
         }
     }

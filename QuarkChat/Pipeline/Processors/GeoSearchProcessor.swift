@@ -27,7 +27,8 @@ struct GeoSearchProcessor: Sendable {
 
             return DomainResult(
                 enrichmentText: lines.joined(separator: "\n"),
-                citations: []
+                citations: [],
+                actions: []
             )
         } catch {
             return .empty

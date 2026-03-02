@@ -39,7 +39,8 @@ struct WebSearchProcessor: Sendable {
 
         return DomainResult(
             enrichmentText: lines.joined(separator: "\n"),
-            citations: citations
+            citations: citations,
+            actions: []
         )
     }
 }

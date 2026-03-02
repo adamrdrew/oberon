@@ -3,6 +3,7 @@ import Observation
 import SwiftUI
 import SwiftData
 import FoundationModels
+import MapKit
 
 @Observable
 @MainActor
@@ -125,6 +126,13 @@ final class ChatViewModel {
                 pipelineStepsJSON = String(data: data, encoding: .utf8)
             }
 
+            // Encode actions
+            var actionsJSON: String?
+            if !pipelineOutput.actions.isEmpty,
+               let data = try? JSONEncoder().encode(pipelineOutput.actions) {
+                actionsJSON = String(data: data, encoding: .utf8)
+            }
+
             // Clear streaming state and append final message without animation
             var noAnimation = Transaction(animation: .none)
             noAnimation.disablesAnimations = true
@@ -137,6 +145,7 @@ final class ChatViewModel {
                 )
                 assistantMessage.citationsJSON = citationsJSON
                 assistantMessage.pipelineStepsJSON = pipelineStepsJSON
+                assistantMessage.actionsJSON = actionsJSON
                 assistantMessage.conversation = conversation
                 modelContext.insert(assistantMessage)
                 conversation.updatedAt = Date()
@@ -146,6 +155,11 @@ final class ChatViewModel {
 
             // Clear live pipeline steps now that they're persisted
             coordinator.pipelineSteps = []
+
+            // Auto-execute primary action after message is persisted
+            if let primaryAction = pipelineOutput.actions.first {
+                executeAction(primaryAction)
+            }
 
             // Generate title if first exchange
             if conversation.title == "New Chat" {
@@ -170,6 +184,41 @@ final class ChatViewModel {
     func stopGenerating() {
         isGenerating = false
         showTypingIndicator = false
+    }
+
+    func executeAction(_ action: PlaceAction) {
+        switch action.type {
+        case .directions:
+            if let lat = action.latitude, let lon = action.longitude {
+                let coordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+                let placemark = MKPlacemark(coordinate: coordinate)
+                let mapItem = MKMapItem(placemark: placemark)
+                mapItem.name = action.placeName
+                mapItem.openInMaps(launchOptions: [
+                    MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving
+                ])
+            } else if let url = URL(string: action.urlString) {
+                openURL(url)
+            }
+
+        case .call:
+            if let url = URL(string: action.urlString) {
+                openURL(url)
+            }
+
+        case .openWebsite:
+            if let url = URL(string: action.urlString) {
+                openURL(url)
+            }
+        }
+    }
+
+    private func openURL(_ url: URL) {
+        #if os(macOS)
+        NSWorkspace.shared.open(url)
+        #else
+        UIApplication.shared.open(url)
+        #endif
     }
 
     private func handleGenerationError(_ error: LanguageModelSession.GenerationError) {

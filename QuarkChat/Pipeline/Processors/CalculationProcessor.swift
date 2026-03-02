@@ -30,7 +30,8 @@ struct CalculationProcessor: Sendable {
             let formatted = formatNumber(result)
             return DomainResult(
                 enrichmentText: "\(expr) = \(formatted)",
-                citations: []
+                citations: [],
+                actions: []
             )
         } catch {
             return .empty

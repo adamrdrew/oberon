@@ -19,7 +19,10 @@ struct ChatView: View {
                         ForEach(viewModel.messages, id: \.id) { message in
                             MessageBubble(
                                 message: message,
-                                userColor: Color(hex: viewModel.userBubbleColor) ?? .blue
+                                userColor: Color(hex: viewModel.userBubbleColor) ?? .blue,
+                                onActionExecute: { action in
+                                    viewModel.executeAction(action)
+                                }
                             )
                         }
 

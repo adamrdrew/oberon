@@ -4,6 +4,7 @@ import MarkdownUI
 struct MessageBubble: View {
     let message: Message
     var userColor: Color = .blue
+    var onActionExecute: ((PlaceAction) -> Void)?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -36,6 +37,12 @@ struct MessageBubble: View {
 
                 if !isUser && !message.citations.isEmpty {
                     CitationLinksView(citations: message.citations)
+                }
+
+                if !isUser && !message.actions.isEmpty {
+                    ActionButtonsView(actions: message.actions) { action in
+                        onActionExecute?(action)
+                    }
                 }
 
                 Text(message.createdAt, style: .time)
