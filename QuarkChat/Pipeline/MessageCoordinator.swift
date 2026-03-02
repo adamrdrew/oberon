@@ -267,13 +267,13 @@ final class MessageCoordinator {
         switch intent {
         case .factualLookup:
             header = "Web info:"
-            footer = "Use the info above to answer naturally."
+            footer = "Give a thorough, detailed answer using all the info above. Include key facts, context, and details."
         case .calculation:
             header = "Calculation result:"
             footer = "Present this result in context."
         case .geoSearch:
             header = "Places found:"
-            footer = "Use the info above to answer naturally."
+            footer = "Present the places with useful details like distance, address, and what makes each notable."
         case .placeAction:
             header = "Action info:"
             footer = "Already done. Confirm briefly with place details."
@@ -306,7 +306,7 @@ final class MessageCoordinator {
             footer = "Present this result naturally."
         case .weather:
             header = "Weather data:"
-            footer = "Answer the weather question using this data."
+            footer = "Give a helpful weather summary using all the data. Include temperature, conditions, and any notable details."
         case .contactLookup:
             header = "Contact info:"
             footer = "Present the contact info naturally."

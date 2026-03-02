@@ -10,6 +10,7 @@ struct ChatView: View {
     @State private var viewModel = ChatViewModel()
     @State private var userProfile: UserProfile?
     @State private var hasScrolledToBottom = false
+    @State private var greetingAppeared = false
 
     private var isEmptyState: Bool {
         viewModel.messages.isEmpty && !viewModel.isGenerating
@@ -145,7 +146,7 @@ struct ChatView: View {
                     guard let id = target else { return }
                     DispatchQueue.main.async {
                         withAnimation(.easeOut(duration: 0.3)) {
-                            proxy.scrollTo(id, anchor: .top)
+                            proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: 0.1))
                         }
                     }
                 }
@@ -166,12 +167,16 @@ struct ChatView: View {
                 .font(.system(size: 44))
                 .foregroundStyle(.tertiary)
                 .padding(.bottom, 8)
+                .scaleEffect(greetingAppeared ? 1 : 0.6)
+                .opacity(greetingAppeared ? 1 : 0)
 
             if let headline = viewModel.greetingHeadline {
                 Text(headline)
                     .font(.title)
                     .fontWeight(.semibold)
                     .multilineTextAlignment(.center)
+                    .scaleEffect(greetingAppeared ? 1 : 0.9)
+                    .opacity(greetingAppeared ? 1 : 0)
 
                 if let subtitle = viewModel.greetingSubtitle {
                     Text(subtitle)
@@ -179,9 +184,18 @@ struct ChatView: View {
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 40)
+                        .opacity(greetingAppeared ? 1 : 0)
                 }
-            } else {
-                ProgressView()
+            }
+        }
+        .animation(reduceMotion ? .none : .spring(duration: 0.5, bounce: 0.3), value: greetingAppeared)
+        .onAppear {
+            guard !reduceMotion else {
+                greetingAppeared = true
+                return
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                greetingAppeared = true
             }
         }
     }

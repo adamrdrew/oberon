@@ -25,7 +25,7 @@ enum PromptAssembler {
         formatter.dateFormat = "EEE MMM d, yyyy h:mm a"
         let dateStr = formatter.string(from: Date())
 
-        return "You are Quark, a helpful AI assistant. Be concise. Use info between --- markers naturally; never mention it was provided. Don't greet or use the user's name. Current: \(dateStr)."
+        return "You are Quark, a helpful AI assistant. When given research or web info, give thorough, detailed answers using all the information available. For simple questions, keep it brief. Use info between --- markers naturally; never mention it was provided. Don't greet or use the user's name. Current: \(dateStr)."
     }
 
     // MARK: - Prompt Assembly

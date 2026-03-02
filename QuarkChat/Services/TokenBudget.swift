@@ -5,7 +5,7 @@ enum TokenBudget {
 
     static func enrichmentCap(for intent: MessageIntent) -> Int {
         switch intent {
-        case .factualLookup:   return 1600
+        case .factualLookup:   return 2200
         case .weather:         return 400
         case .geoSearch:       return 600
         case .placeAction:     return 400

@@ -13,9 +13,11 @@ struct StreamingMessageView: View {
                         .markdownTheme(.quarkChat)
                         .animation(.none, value: text)
 
-                    Text(" |")
-                        .fontWeight(.light)
-                        .opacity(showCursor ? 1 : 0)
+                    RoundedRectangle(cornerRadius: 1)
+                        .fill(.primary)
+                        .frame(width: 2, height: 16)
+                        .padding(.leading, 2)
+                        .opacity(showCursor ? 1 : 0.15)
                         .animation(
                             .easeInOut(duration: 0.5).repeatForever(autoreverses: true),
                             value: showCursor

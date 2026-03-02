@@ -7,7 +7,8 @@ struct CitationLinksView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            ForEach(Array(citations.enumerated()), id: \.offset) { _, citation in
+            ForEach(citations.indices, id: \.self) { index in
+                let citation = citations[index]
                 Button {
                     if let url = URL(string: citation.url) {
                         openURL(url)
@@ -21,7 +22,7 @@ struct CitationLinksView: View {
                         Image(systemName: "link")
                             .font(.caption2)
                     }
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
             }
@@ -34,7 +35,6 @@ struct CitationLinksView: View {
               let host = url.host() else {
             return urlString
         }
-        // Strip "www." prefix for cleaner display
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
 }

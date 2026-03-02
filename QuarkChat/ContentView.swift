@@ -5,6 +5,8 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(AppState.self) private var appState
 
+    @State private var hasInitialized = false
+
     var body: some View {
         @Bindable var appStateBindable = appState
 
@@ -14,7 +16,9 @@ struct ContentView: View {
                 .navigationSplitViewColumnWidth(min: 220, ideal: 260)
             #endif
         } detail: {
-            if appState.isModelAvailable {
+            if !hasInitialized {
+                Color.clear
+            } else if appState.isModelAvailable {
                 if let conversation = appState.selectedConversation {
                     ChatView(conversation: conversation)
                         .id(conversation.id)
@@ -41,6 +45,7 @@ struct ContentView: View {
                 try? modelContext.save()
                 appState.selectedConversation = conversation
             }
+            hasInitialized = true
         }
     }
 }

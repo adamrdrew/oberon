@@ -49,6 +49,8 @@ final class ChatViewModel {
 
         if messages.isEmpty {
             showGreeting = true
+            // Show a static fallback immediately so there's no spinner flash
+            setFallbackGreeting()
             Task {
                 await generateGreeting()
             }
@@ -60,6 +62,14 @@ final class ChatViewModel {
     private func loadMessages() {
         guard let conversation else { return }
         messages = conversation.sortedMessages
+    }
+
+    private func setFallbackGreeting() {
+        let hour = Calendar.current.component(.hour, from: Date())
+        let timeOfDay = hour < 12 ? "morning" : (hour < 17 ? "afternoon" : "evening")
+        let name = (userProfile?.name.isEmpty == false) ? userProfile!.name : "there"
+        greetingHeadline = "Good \(timeOfDay), \(name)!"
+        greetingSubtitle = "Ready for whatever you need."
     }
 
     private func generateGreeting() async {

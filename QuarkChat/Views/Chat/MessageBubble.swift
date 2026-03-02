@@ -10,8 +10,16 @@ struct MessageBubble: View {
     var isSpeaking: Bool = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var hasAppeared = false
 
     private var isUser: Bool { message.role == "user" }
+
+    /// Only animate user messages created within the last 2 seconds.
+    /// Assistant messages already have their streaming entrance — animating them
+    /// when the StreamingMessageView is swapped for the final bubble looks buggy.
+    private var shouldAnimate: Bool {
+        isUser && !reduceMotion && message.createdAt.timeIntervalSinceNow > -2
+    }
 
     var body: some View {
         HStack {
@@ -87,6 +95,17 @@ struct MessageBubble: View {
             if !isUser { Spacer(minLength: 60) }
         }
         .padding(.horizontal, 12)
+        .opacity(shouldAnimate ? (hasAppeared ? 1 : 0) : 1)
+        .offset(x: shouldAnimate ? (hasAppeared ? 0 : (isUser ? 30 : -30)) : 0)
+        .animation(
+            shouldAnimate ? .spring(duration: 0.4, bounce: 0.25) : .none,
+            value: hasAppeared
+        )
+        .onAppear {
+            if shouldAnimate && !hasAppeared {
+                hasAppeared = true
+            }
+        }
     }
 }
 
