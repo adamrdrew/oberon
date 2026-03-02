@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import SwiftUI
 import SwiftData
 import FoundationModels
 
@@ -73,7 +74,9 @@ final class ChatViewModel {
         modelContext.insert(userMessage)
         conversation.updatedAt = Date()
         try? modelContext.save()
-        messages.append(userMessage)
+        withAnimation(.spring(duration: 0.35, bounce: 0.2)) {
+            messages.append(userMessage)
+        }
 
         // Check compaction
         if chatService.needsCompaction(messages: messages) {
@@ -89,21 +92,23 @@ final class ChatViewModel {
 
             showTypingIndicator = false
 
-            // Clear streaming text BEFORE appending the message bubble
-            // to avoid showing both StreamingMessageView and MessageBubble simultaneously
-            chatService.clearStreamingState()
-
-            // Persist assistant message
-            let assistantMessage = Message(
-                content: responseText,
-                role: "assistant",
-                sortIndex: messages.count
-            )
-            assistantMessage.conversation = conversation
-            modelContext.insert(assistantMessage)
-            conversation.updatedAt = Date()
-            try? modelContext.save()
-            messages.append(assistantMessage)
+            // Clear streaming state and append final message without animation.
+            // The user already watched the text stream in — no need for a second entrance.
+            var noAnimation = Transaction(animation: .none)
+            noAnimation.disablesAnimations = true
+            withTransaction(noAnimation) {
+                chatService.clearStreamingState()
+                let assistantMessage = Message(
+                    content: responseText,
+                    role: "assistant",
+                    sortIndex: messages.count
+                )
+                assistantMessage.conversation = conversation
+                modelContext.insert(assistantMessage)
+                conversation.updatedAt = Date()
+                try? modelContext.save()
+                messages.append(assistantMessage)
+            }
 
             // Generate title if first exchange
             if conversation.title == "New Chat" {

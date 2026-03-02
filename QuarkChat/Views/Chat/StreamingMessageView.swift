@@ -1,4 +1,5 @@
 import SwiftUI
+import MarkdownUI
 
 struct StreamingMessageView: View {
     let text: String
@@ -7,11 +8,13 @@ struct StreamingMessageView: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 0) {
-                    Text(text)
+                HStack(alignment: .lastTextBaseline, spacing: 0) {
+                    Markdown(text)
+                        .markdownTheme(.quarkChat)
                         .animation(.none, value: text)
 
                     Text(" |")
+                        .fontWeight(.light)
                         .opacity(showCursor ? 1 : 0)
                         .animation(
                             .easeInOut(duration: 0.5).repeatForever(autoreverses: true),

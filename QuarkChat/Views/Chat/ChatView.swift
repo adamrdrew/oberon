@@ -16,15 +16,10 @@ struct ChatView: View {
             ScrollView {
                 GlassEffectContainer(spacing: 20) {
                     LazyVStack(spacing: 12) {
-                        ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, message in
+                        ForEach(viewModel.messages, id: \.id) { message in
                             MessageBubble(
                                 message: message,
                                 userColor: Color(hex: viewModel.userBubbleColor) ?? .blue
-                            )
-                            .transition(
-                                reduceMotion
-                                    ? .opacity
-                                    : .push(from: .bottom).combined(with: .opacity)
                             )
                         }
 
@@ -57,8 +52,6 @@ struct ChatView: View {
             }
             .scrollPosition($scrollPosition)
             .defaultScrollAnchor(.bottom)
-            .animation(.spring(duration: 0.35, bounce: 0.2), value: viewModel.messages.count)
-            .animation(.spring(duration: 0.3, bounce: 0.15), value: viewModel.isGenerating)
             .animation(.spring(duration: 0.3, bounce: 0.15), value: viewModel.serviceActiveToolName)
             .animation(.spring(duration: 0.3, bounce: 0.15), value: viewModel.showTypingIndicator)
             .overlay {
