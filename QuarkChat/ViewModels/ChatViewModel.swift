@@ -14,7 +14,8 @@ final class ChatViewModel {
     var errorMessage: String?
     var isUserScrolledUp: Bool = false
     var userBubbleColor: String = "#007AFF"
-    var greetingText: String?
+    var greetingHeadline: String?
+    var greetingSubtitle: String?
     var showGreeting: Bool = true
 
     private let chatService = ChatService()
@@ -47,8 +48,9 @@ final class ChatViewModel {
     }
 
     private func generateGreeting() async {
-        let greeting = await chatService.generateGreeting(userName: userProfile?.name)
-        greetingText = greeting
+        let result = await chatService.generateGreeting(userName: userProfile?.name)
+        greetingHeadline = result.headline
+        greetingSubtitle = result.subtitle
     }
 
     private func ensureSession() {
@@ -92,6 +94,13 @@ final class ChatViewModel {
 
             showTypingIndicator = false
 
+            // Pick up any citations from the web search tool
+            let citations = await CitationStore.shared.take()
+            var citationsJSON: String?
+            if !citations.isEmpty, let data = try? JSONEncoder().encode(citations) {
+                citationsJSON = String(data: data, encoding: .utf8)
+            }
+
             // Clear streaming state and append final message without animation.
             // The user already watched the text stream in — no need for a second entrance.
             var noAnimation = Transaction(animation: .none)
@@ -103,6 +112,7 @@ final class ChatViewModel {
                     role: "assistant",
                     sortIndex: messages.count
                 )
+                assistantMessage.citationsJSON = citationsJSON
                 assistantMessage.conversation = conversation
                 modelContext.insert(assistantMessage)
                 conversation.updatedAt = Date()

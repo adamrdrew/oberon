@@ -89,18 +89,25 @@ struct ChatView: View {
 
     @ViewBuilder
     private var greetingOverlay: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 8) {
             Image(systemName: "bubble.left.and.bubble.right.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 44))
+                .foregroundStyle(.tertiary)
+                .padding(.bottom, 8)
 
-            if let greeting = viewModel.greetingText {
-                Text(greeting)
-                    .font(.title3)
-                    .fontWeight(.medium)
+            if let headline = viewModel.greetingHeadline {
+                Text(headline)
+                    .font(.title)
+                    .fontWeight(.semibold)
                     .multilineTextAlignment(.center)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 40)
+
+                if let subtitle = viewModel.greetingSubtitle {
+                    Text(subtitle)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                }
             } else {
                 ProgressView()
             }

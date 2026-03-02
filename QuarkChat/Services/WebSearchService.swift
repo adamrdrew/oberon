@@ -70,7 +70,8 @@ actor WebSearchService {
                 snippet = ""
             }
 
-            let url = extractBetween(block, start: "href=\"", end: "\"") ?? ""
+            let rawURL = extractBetween(block, start: "href=\"", end: "\"") ?? ""
+            let url = extractRealURL(from: rawURL)
 
             if !title.isEmpty {
                 results.append(SearchResult(title: title, snippet: snippet, url: url))
@@ -78,6 +79,25 @@ actor WebSearchService {
         }
 
         return results
+    }
+
+    private func extractRealURL(from rawURL: String) -> String {
+        // DuckDuckGo wraps URLs like //duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.com&rut=...
+        // Extract the actual destination from the uddg parameter
+        if rawURL.contains("uddg=") {
+            if let range = rawURL.range(of: "uddg=") {
+                let after = String(rawURL[range.upperBound...])
+                let encoded = after.components(separatedBy: "&").first ?? after
+                if let decoded = encoded.removingPercentEncoding, !decoded.isEmpty {
+                    return decoded
+                }
+            }
+        }
+        // If it's a protocol-relative URL, add https:
+        if rawURL.hasPrefix("//") {
+            return "https:" + rawURL
+        }
+        return rawURL
     }
 
     private func extractBetween(_ text: String, start: String, end: String) -> String? {

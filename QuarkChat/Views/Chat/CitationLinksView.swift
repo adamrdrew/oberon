@@ -1,0 +1,40 @@
+import SwiftUI
+
+struct CitationLinksView: View {
+    let citations: [Citation]
+
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ForEach(Array(citations.enumerated()), id: \.offset) { _, citation in
+                Button {
+                    if let url = URL(string: citation.url) {
+                        openURL(url)
+                    }
+                } label: {
+                    Label {
+                        Text(displayHost(citation.url))
+                            .font(.caption)
+                            .lineLimit(1)
+                    } icon: {
+                        Image(systemName: "link")
+                            .font(.caption2)
+                    }
+                    .foregroundStyle(.blue)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.leading, 8)
+    }
+
+    private func displayHost(_ urlString: String) -> String {
+        guard let url = URL(string: urlString),
+              let host = url.host() else {
+            return urlString
+        }
+        // Strip "www." prefix for cleaner display
+        return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+    }
+}

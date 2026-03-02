@@ -13,7 +13,7 @@ struct MessageBubble: View {
         HStack {
             if isUser { Spacer(minLength: 60) }
 
-            VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
+            VStack(alignment: isUser ? .trailing : .leading, spacing: 6) {
                 Group {
                     if isUser {
                         Text(message.content)
@@ -28,6 +28,10 @@ struct MessageBubble: View {
                     isUser ? .regular.tint(userColor) : .regular,
                     in: .rect(cornerRadius: 18)
                 )
+
+                if !isUser && !message.citations.isEmpty {
+                    CitationLinksView(citations: message.citations)
+                }
 
                 Text(message.createdAt, style: .time)
                     .font(.caption2)

@@ -20,8 +20,23 @@ struct WebSearchTool: Tool {
             return "No results found for '\(arguments.query)'. Try a different search."
         }
 
-        return results.enumerated().map { index, result in
-            "\(index + 1). \(result.title)\n\(result.snippet)"
-        }.joined(separator: "\n\n")
+        // Store citations for the UI
+        let citations = results.compactMap { result -> Citation? in
+            guard !result.url.isEmpty else { return nil }
+            return Citation(title: result.title, url: result.url)
+        }
+        await CitationStore.shared.set(citations)
+
+        // Try to fetch and summarize the top result for a real answer
+        if let topURL = results.first?.url, !topURL.isEmpty,
+           let summary = await searchService.fetchAndSummarize(url: topURL) {
+            let source = results.first?.title ?? "web"
+            return "From \(source): \(summary)"
+        }
+
+        // Fallback: return snippets if fetch/summarize failed
+        return results.prefix(2).map { result in
+            "\(result.title): \(result.snippet)"
+        }.joined(separator: "\n")
     }
 }

@@ -42,9 +42,11 @@ final class ChatService {
         parts.append("You have tools. Use web_search for ANY question about current events, weather, news, sports scores, facts you're unsure about, or anything that benefits from up-to-date info. Use current_datetime when the user asks about the time or date.")
         parts.append("ALWAYS use web_search rather than guessing when you don't know the answer.")
 
+        parts.append("Do NOT address the user by name in your responses. Do NOT start messages with greetings. Just answer directly.")
+
         if let profile = userProfile {
             if !profile.name.isEmpty {
-                parts.append("The user's name is \(profile.name).")
+                parts.append("The user's name is \(profile.name) (for your reference only — do not use it in responses).")
             }
             if !profile.location.isEmpty {
                 parts.append("They're in \(profile.location).")
@@ -149,27 +151,51 @@ final class ChatService {
 
     // MARK: - Utility Sessions
 
-    func generateGreeting(userName: String?) async -> String {
+    struct GreetingResult {
+        var headline: String
+        var subtitle: String
+    }
+
+    @Generable
+    struct GeneratedGreeting {
+        @Guide(description: "Short greeting like 'Hi Adam' or 'Good evening'. 2-4 words max. MUST NOT be a question.")
+        var headline: String
+
+        @Guide(description: "Friendly, neutral statement like 'Ready when you are.' or 'Let's get started.' One short sentence. MUST NOT be a question. MUST NOT end with a question mark.")
+        var subtitle: String
+    }
+
+    func generateGreeting(userName: String?) async -> GreetingResult {
         let session = LanguageModelSession(
-            instructions: "Generate a brief, warm greeting. One sentence only."
+            instructions: "You generate greeting text for a chat app. NEVER ask a question. NEVER use a question mark. Output a short greeting and a friendly neutral statement."
         )
 
         let hour = Calendar.current.component(.hour, from: Date())
         let timeOfDay = hour < 12 ? "morning" : (hour < 17 ? "afternoon" : "evening")
 
-        let prompt: String
-        if let name = userName, !name.isEmpty {
-            prompt = "Greet \(name) in the \(timeOfDay). Be friendly and brief."
-        } else {
-            prompt = "Greet the user in the \(timeOfDay). Be friendly and brief."
-        }
+        let nameStr = (userName?.isEmpty == false) ? userName! : "there"
+
+        let prompt = "Generate a greeting for \(nameStr) in the \(timeOfDay). The headline should be a short greeting with their name like 'Hey \(nameStr)' or 'Good \(timeOfDay), \(nameStr)'. The subtitle should be a friendly, upbeat, neutral statement — NOT a question. Examples of good subtitles: 'Ready for whatever you need.', 'Let's see what we can get into.', 'Here whenever you need me.'"
 
         do {
-            let response = try await session.respond(to: prompt)
-            return response.content
+            let response = try await session.respond(
+                to: prompt,
+                generating: GeneratedGreeting.self
+            )
+            return GreetingResult(
+                headline: response.content.headline.trimmingCharacters(in: .whitespacesAndNewlines),
+                subtitle: response.content.subtitle
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .replacingOccurrences(of: "?", with: ".")
+            )
         } catch {
-            return userName.map { "Hi \($0)! How can I help you today?" }
-                ?? "Hello! How can I help you today?"
+            let fallbackHeadline: String
+            switch timeOfDay {
+            case "morning": fallbackHeadline = "Good morning, \(nameStr)!"
+            case "afternoon": fallbackHeadline = "Good afternoon, \(nameStr)!"
+            default: fallbackHeadline = "Good evening, \(nameStr)!"
+            }
+            return GreetingResult(headline: fallbackHeadline, subtitle: "Ready for whatever you need.")
         }
     }
 
