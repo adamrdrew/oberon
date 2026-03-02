@@ -1,66 +1,45 @@
-//
-//  ContentView.swift
-//  QuarkChat
-//
-//  Created by Adam Drew on 3/1/26.
-//
-
 import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @Environment(AppState.self) private var appState
 
     var body: some View {
+        @Bindable var appStateBindable = appState
+
         NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
-                }
-                .onDelete(perform: deleteItems)
-            }
-#if os(macOS)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-#endif
-            .toolbar {
-#if os(iOS)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-#endif
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
+            ConversationListView()
+            #if os(macOS)
+                .navigationSplitViewColumnWidth(min: 220, ideal: 260)
+            #endif
         } detail: {
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+            if appState.isModelAvailable {
+                if let conversation = appState.selectedConversation {
+                    ChatView(conversation: conversation)
+                        .id(conversation.id)
+                } else {
+                    ContentUnavailableView {
+                        Label("QuarkChat", systemImage: "bubble.left.and.bubble.right")
+                    } description: {
+                        Text("Select a conversation or start a new chat.")
+                    }
+                }
+            } else {
+                ContentUnavailableView {
+                    Label("Apple Intelligence Required", systemImage: "brain")
+                } description: {
+                    Text(appState.unavailableReason)
+                }
             }
+        }
+        .task {
+            appState.checkAvailability()
         }
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .environment(AppState())
+        .modelContainer(for: [Conversation.self, Message.self, UserProfile.self], inMemory: true)
 }
