@@ -7,8 +7,7 @@ struct PipelineStatusView: View {
     @State private var appearedStepIDs: Set<UUID> = []
 
     private var dominantColor: Color {
-        // Use the color of the most recent non-analysis step, or gray
-        steps.last(where: { $0.category != .analysis })?.category.color ?? .gray
+        steps.last?.category.color ?? .gray
     }
 
     var body: some View {

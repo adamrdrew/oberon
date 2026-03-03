@@ -8,6 +8,7 @@ class Conversation {
     var summary: String = ""
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
+    var transcriptData: Data?
 
     @Relationship(deleteRule: .cascade, inverse: \Message.conversation)
     var messages: [Message]?

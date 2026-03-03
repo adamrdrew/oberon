@@ -1,63 +1,29 @@
 import Foundation
 
 enum PromptAssembler {
-    /// Assembles instructions and prompt for a fresh per-turn session.
-    static func assemble(
-        conversationSummary: String,
-        userProfile: UserProfile?,
-        enrichedPrompt: String,
-        intent: MessageIntent
-    ) -> (instructions: String, prompt: String) {
-        let instructions = buildInstructions()
-        let prompt = buildPrompt(
-            conversationSummary: conversationSummary,
-            userProfile: userProfile,
-            enrichedPrompt: enrichedPrompt,
-            intent: intent
-        )
-        return (instructions, prompt)
-    }
 
-    // MARK: - Instructions (~60 tokens)
+    // MARK: - Instructions (called once per session creation)
 
-    private static func buildInstructions() -> String {
+    static func buildInstructions(userProfile: UserProfile?) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEE MMM d, yyyy h:mm a"
         let dateStr = formatter.string(from: Date())
 
-        return "You are Quark, a helpful AI assistant. When given research or web info, give thorough, detailed answers using all the information available. For simple questions, keep it brief. Use info between --- markers naturally; never mention it was provided. Don't greet or use the user's name. Current: \(dateStr)."
-    }
+        var parts: [String] = [
+            "You are Quark, a helpful AI assistant. You have tools available: web_search for current info, search_nearby for finding places, get_weather for weather, and calculator for math. Use them when the user's question would benefit from real data. For conversational messages, just respond naturally. When given tool results, give thorough, detailed answers using all the information. Don't greet or use the user's name repeatedly. Current: \(dateStr)."
+        ]
 
-    // MARK: - Prompt Assembly
-
-    private static func buildPrompt(
-        conversationSummary: String,
-        userProfile: UserProfile?,
-        enrichedPrompt: String,
-        intent: MessageIntent
-    ) -> String {
-        var parts: [String] = []
-
-        // Profile block (~30-50 tokens)
         if let profile = userProfile {
-            let profileParts = buildProfileParts(profile)
-            if !profileParts.isEmpty {
-                parts.append(profileParts)
+            let profileStr = buildProfileParts(profile)
+            if !profileStr.isEmpty {
+                parts.append(profileStr)
             }
         }
 
-        // Conversation summary (~100-150 tokens)
-        let trimmedSummary = conversationSummary.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmedSummary.isEmpty {
-            let capped = TokenBudget.capConversationContext(trimmedSummary)
-            parts.append("Conversation so far: \(capped)")
-        }
-
-        // Enriched prompt (already contains user message + domain enrichment)
-        parts.append(enrichedPrompt)
-
         return parts.joined(separator: "\n\n")
     }
+
+    // MARK: - Private
 
     private static func buildProfileParts(_ profile: UserProfile) -> String {
         var fields: [String] = []

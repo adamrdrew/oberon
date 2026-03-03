@@ -83,8 +83,8 @@ struct ChatView: View {
 
                             // Pipeline + typing indicators
                             Group {
-                                if !viewModel.coordinator.pipelineSteps.isEmpty {
-                                    PipelineStatusView(steps: viewModel.coordinator.pipelineSteps)
+                                if !viewModel.livePipelineSteps.isEmpty {
+                                    PipelineStatusView(steps: viewModel.livePipelineSteps)
                                         .padding(.vertical, 8)
                                         .transition(
                                             reduceMotion
@@ -110,7 +110,7 @@ struct ChatView: View {
                             }
                             .animation(
                                 reduceMotion ? .none : .spring(duration: 0.3, bounce: 0.15),
-                                value: viewModel.coordinator.pipelineSteps.count
+                                value: viewModel.livePipelineSteps.count
                             )
                             .animation(
                                 reduceMotion ? .none : .spring(duration: 0.3, bounce: 0.15),

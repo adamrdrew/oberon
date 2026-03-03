@@ -25,7 +25,9 @@ final class ChatViewModel {
     var showGreeting: Bool = true
     var scrollTargetMessageID: UUID?
 
-    let coordinator = MessageCoordinator()
+    /// Live pipeline steps from current tool calls (drained after response)
+    var livePipelineSteps: [PipelineStep] = []
+
     let ttsService = TTSService()
     let speechService = SpeechService()
     private let chatService = ChatService()
@@ -41,15 +43,30 @@ final class ChatViewModel {
     }
 
     func configure(conversation: Conversation, modelContext: ModelContext, userProfile: UserProfile?) {
+        // Invalidate previous session if switching conversations
+        if self.conversation?.id != conversation.id {
+            chatService.invalidateSession()
+        }
+
         self.conversation = conversation
         self.modelContext = modelContext
         self.userProfile = userProfile
         self.userBubbleColor = userProfile?.favoriteColorHex ?? "#007AFF"
         loadMessages()
 
+        // Build tools with user context injected
+        let tools = buildTools(userProfile: userProfile)
+
+        // Initialize persistent session with tools
+        let instructions = PromptAssembler.buildInstructions(userProfile: userProfile)
+        chatService.initializeSession(
+            transcriptData: conversation.transcriptData,
+            instructions: instructions,
+            tools: tools
+        )
+
         if messages.isEmpty {
             showGreeting = true
-            // Show a static fallback immediately so there's no spinner flash
             setFallbackGreeting()
             Task {
                 await generateGreeting()
@@ -57,6 +74,16 @@ final class ChatViewModel {
         } else {
             showGreeting = false
         }
+    }
+
+    private func buildTools(userProfile: UserProfile?) -> [any Tool] {
+        let location = userProfile?.location
+        return [
+            WebSearchTool(),
+            SearchNearbyTool(userLocation: location),
+            GetWeatherTool(userLocation: location),
+            CalculatorTool(),
+        ]
     }
 
     private func loadMessages() {
@@ -98,43 +125,38 @@ final class ChatViewModel {
 
         isGenerating = true
 
-        // Build recent exchanges for classifier context
-        let recentExchanges = messages.suffix(6).map { msg in
-            (role: msg.role, content: msg.content)
+        // Check compaction before sending
+        if chatService.needsCompaction {
+            let instructions = PromptAssembler.buildInstructions(userProfile: userProfile)
+            await chatService.compactTranscript(instructions: instructions)
         }
 
-        // Find the last assistant message for clipboard processor
-        let lastAssistantMessage = messages.last(where: { $0.role == "assistant" })?.content
-
-        // Run pipeline
-        let pipelineOutput = await coordinator.process(
-            userMessage: text,
-            recentExchanges: recentExchanges,
-            userProfile: userProfile,
-            lastAssistantMessage: lastAssistantMessage
-        )
-
-        // Assemble fresh-session prompt
-        let assembled = PromptAssembler.assemble(
-            conversationSummary: conversation.summary,
-            userProfile: userProfile,
-            enrichedPrompt: pipelineOutput.enrichedPrompt,
-            intent: pipelineOutput.intent
-        )
-
-        // Stream response from fresh session
+        // Stream response — session handles tool calling transparently
         showTypingIndicator = true
+
+        // Start polling for live pipeline steps
+        let stepPollTask = Task {
+            while !Task.isCancelled {
+                let steps = await ToolResultStore.shared.pipelineSteps
+                self.livePipelineSteps = steps
+                try? await Task.sleep(for: .milliseconds(200))
+            }
+        }
 
         var responseText: String?
         do {
-            responseText = try await chatService.streamResponse(
-                instructions: assembled.instructions,
-                prompt: assembled.prompt
-            )
+            responseText = try await chatService.streamResponse(prompt: text)
         } catch let error as LanguageModelSession.GenerationError {
             switch error {
             case .exceededContextWindowSize:
-                errorMessage = "That was too complex. Try a shorter question."
+                // Reactive fallback: force compaction and retry
+                let instructions = PromptAssembler.buildInstructions(userProfile: userProfile)
+                await chatService.compactTranscript(instructions: instructions)
+                do {
+                    responseText = try await chatService.streamResponse(prompt: text)
+                } catch {
+                    errorMessage = "That was too complex. Try a shorter question."
+                }
             case .guardrailViolation:
                 errorMessage = "I can't help with that."
             default:
@@ -144,21 +166,25 @@ final class ChatViewModel {
             errorMessage = "Something went wrong."
         }
 
+        stepPollTask.cancel()
         showTypingIndicator = false
 
         guard let responseText else {
-            coordinator.pipelineSteps = []
+            livePipelineSteps = []
             isGenerating = false
             chatService.clearStreamingState()
             return
         }
 
+        // Drain tool results
+        let toolResults = await ToolResultStore.shared.takeAll()
+
         // Encode all metadata
-        let citationsJSON = encodeJSON(pipelineOutput.citations)
-        let pipelineStepsJSON = encodeJSON(pipelineOutput.pipelineSteps)
-        let actionsJSON = encodeJSON(pipelineOutput.actions)
-        let richContentJSON = encodeJSON(pipelineOutput.richContent)
-        let suggestedRepliesJSON = encodeJSON(pipelineOutput.suggestedReplies)
+        let citationsJSON = encodeJSON(toolResults.citations)
+        let pipelineStepsJSON = encodeJSON(toolResults.pipelineSteps)
+        let actionsJSON = encodeJSON(toolResults.actions)
+        let richContentJSON = encodeJSON(toolResults.richContent)
+        let suggestedRepliesJSON = encodeJSON(toolResults.suggestedReplies)
 
         // Clear streaming state and append final message without animation
         var noAnimation = Transaction(animation: .none)
@@ -177,16 +203,19 @@ final class ChatViewModel {
             assistantMessage.suggestedRepliesJSON = suggestedRepliesJSON
             assistantMessage.conversation = conversation
             modelContext.insert(assistantMessage)
+
+            // Save transcript to conversation for persistence
+            conversation.transcriptData = chatService.transcriptData()
             conversation.updatedAt = Date()
             try? modelContext.save()
             messages.append(assistantMessage)
         }
 
         // Clear live pipeline steps now that they're persisted
-        coordinator.pipelineSteps = []
+        livePipelineSteps = []
 
         // Auto-execute primary action after message is persisted
-        if let primaryAction = pipelineOutput.actions.first, primaryAction.autoExecutes {
+        if let primaryAction = toolResults.actions.first, primaryAction.autoExecutes {
             executeAction(primaryAction)
         }
 
@@ -199,19 +228,6 @@ final class ChatViewModel {
 
         isGenerating = false
         chatService.clearStreamingState()
-
-        // Update rolling summary in background
-        let currentSummary = conversation.summary
-        let finalResponse = responseText
-        Task {
-            let updated = await chatService.updateRollingSummary(
-                existing: currentSummary,
-                userMessage: text,
-                response: finalResponse
-            )
-            conversation.summary = updated
-            try? modelContext.save()
-        }
     }
 
     func stopGenerating() {
@@ -236,13 +252,7 @@ final class ChatViewModel {
                 openURL(url)
             }
 
-        case .call, .callContact, .openWebsite, .sendEmail, .messageContact,
-             .openReminders, .openCalendar, .openTimer, .openTranslation:
-            if let urlString = action.urlString, let url = URL(string: urlString) {
-                openURL(url)
-            }
-
-        case .openApp:
+        case .call, .openWebsite:
             if let urlString = action.urlString, let url = URL(string: urlString) {
                 openURL(url)
             }
@@ -251,14 +261,6 @@ final class ChatViewModel {
             if let text = action.payload?["text"] {
                 copyToClipboard(text)
             }
-
-        case .playMusic:
-            // Music playback is handled by MusicProcessor directly
-            break
-
-        case .shareContent:
-            // Share sheet would be handled via ChatView presentation
-            break
         }
     }
 

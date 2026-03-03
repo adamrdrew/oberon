@@ -1,49 +1,43 @@
 import Foundation
+import FoundationModels
 
 enum TokenBudget {
-    // MARK: - Per-Intent Enrichment Caps (characters)
+    // MARK: - Compaction
 
-    static func enrichmentCap(for intent: MessageIntent) -> Int {
-        switch intent {
-        case .factualLookup:   return 2200
-        case .weather:         return 400
-        case .geoSearch:       return 600
-        case .placeAction:     return 400
-        case .calculation:     return 200
-        case .unitConversion:  return 200
-        case .definition:      return 400
-        case .translation:     return 400
-        case .summarization:   return 800
-        case .rewriting:       return 800
-        case .proofreading:    return 800
-        case .reminder:        return 200
-        case .timer:           return 200
-        case .checklist:       return 400
-        case .contactLookup:   return 300
-        case .composeMessage:  return 400
-        case .playMusic:       return 200
-        case .appLaunch:       return 200
-        case .clipboard:       return 200
-        case .passthrough:     return 0
-        }
-    }
+    static let compactionThreshold = 2800  // estimated tokens before compaction
 
-    static let conversationContextCap = 600  // chars
-
-    // MARK: - Capping
-
-    static func capEnrichment(_ text: String, for intent: MessageIntent) -> String {
-        let cap = enrichmentCap(for: intent)
-        guard cap > 0, text.count > cap else { return text }
-        return String(text.prefix(cap - 3)) + "..."
-    }
-
-    static func capConversationContext(_ text: String) -> String {
-        guard text.count > conversationContextCap else { return text }
-        return String(text.prefix(conversationContextCap - 3)) + "..."
-    }
+    // MARK: - Token Estimation
 
     static func estimateTokens(_ text: String) -> Int {
         text.count / 4
+    }
+
+    static func estimateTokens(for transcript: Transcript) -> Int {
+        var total = 0
+        for entry in transcript {
+            switch entry {
+            case .instructions(let instr):
+                for segment in instr.segments {
+                    if case .text(let t) = segment {
+                        total += t.content.count / 4
+                    }
+                }
+            case .prompt(let p):
+                for segment in p.segments {
+                    if case .text(let t) = segment {
+                        total += t.content.count / 4
+                    }
+                }
+            case .response(let r):
+                for segment in r.segments {
+                    if case .text(let t) = segment {
+                        total += t.content.count / 4
+                    }
+                }
+            default:
+                total += 50 // rough estimate for tool calls/output
+            }
+        }
+        return total
     }
 }
