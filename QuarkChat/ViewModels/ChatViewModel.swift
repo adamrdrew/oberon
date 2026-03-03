@@ -61,6 +61,7 @@ final class ChatViewModel {
         self.modelContext = modelContext
         self.userProfile = userProfile
         self.userBubbleColor = userProfile?.favoriteColorHex ?? "#1E2D4D"
+        ttsService.selectedVoiceID = userProfile?.selectedVoiceID ?? ""
         loadMessages()
 
         // Build tools with user context injected
@@ -119,6 +120,7 @@ final class ChatViewModel {
         guard !text.isEmpty, !isGenerating, let conversation, let modelContext else { return }
 
         inputText = ""
+        ttsService.selectedVoiceID = userProfile?.selectedVoiceID ?? ""
         if isVoiceMode { SoundEffectService.playSent() }
         errorMessage = nil
         showGreeting = false
@@ -369,6 +371,7 @@ final class ChatViewModel {
     // MARK: - TTS
 
     func toggleSpeech(for message: Message) {
+        ttsService.selectedVoiceID = userProfile?.selectedVoiceID ?? ""
         ttsService.speak(text: message.content, messageID: message.id)
     }
 

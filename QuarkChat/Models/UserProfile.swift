@@ -11,6 +11,7 @@ class UserProfile {
     var responsePreference: String = ""
     var favoriteColorHex: String = "#1E2D4D"
     var themeID: String = "oberon"
+    var selectedVoiceID: String = ""
     var hasCompletedOnboarding: Bool = false
 
     var favoriteColor: Color {

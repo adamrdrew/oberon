@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		668DD5092F575F5B001AFDA9 /* Oberon 2.icon in Resources */ = {isa = PBXBuildFile; fileRef = 668DD5082F575F5B001AFDA9 /* Oberon 2.icon */; };
+		668DD63A2F579FFF001AFDA9 /* Oberon 3.icon in Resources */ = {isa = PBXBuildFile; fileRef = 668DD6392F579FFF001AFDA9 /* Oberon 3.icon */; };
 		A1B2C3D4E5F6A7B8C9D0E1F4 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6A7B8C9D0E1F3 /* MarkdownUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		662790CB2F551FBA004CCE7D /* QuarkChat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuarkChat.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		668DD5082F575F5B001AFDA9 /* Oberon 2.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "Oberon 2.icon"; sourceTree = "<group>"; };
+		668DD6392F579FFF001AFDA9 /* Oberon 3.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "Oberon 3.icon"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -54,7 +54,7 @@
 			children = (
 				662790CD2F551FBA004CCE7D /* QuarkChat */,
 				662790CC2F551FBA004CCE7D /* Products */,
-				668DD5082F575F5B001AFDA9 /* Oberon 2.icon */,
+				668DD6392F579FFF001AFDA9 /* Oberon 3.icon */,
 			);
 			sourceTree = "<group>";
 		};
@@ -134,7 +134,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				668DD5092F575F5B001AFDA9 /* Oberon 2.icon in Resources */,
+				668DD63A2F579FFF001AFDA9 /* Oberon 3.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -155,8 +155,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "";
-				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]" = "Oberon 2";
-				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=macosx*]" = "Oberon 2";
+				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]" = "Oberon 3";
+				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=macosx*]" = "Oberon 3";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -217,8 +217,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "";
-				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]" = "Oberon 2";
-				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=macosx*]" = "Oberon 2";
+				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=iphoneos*]" = "Oberon 3";
+				"ASSETCATALOG_COMPILER_APPICON_NAME[sdk=macosx*]" = "Oberon 3";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_STYLE = Automatic;

@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import SwiftUI
+import AVFoundation
 
 @Observable
 @MainActor
@@ -11,8 +12,10 @@ final class SettingsViewModel {
     var responsePreference: String = ""
     var favoriteColorHex: String = "#1E2D4D"
     var selectedThemeID: String = "oberon"
+    var selectedVoiceID: String = ""
 
     private var profile: UserProfile?
+    private var previewSynthesizer = AVSpeechSynthesizer()
 
     static let maxAboutMeLength = 250
     static let maxResponsePrefLength = 250
@@ -30,6 +33,16 @@ final class SettingsViewModel {
         set { favoriteColorHex = newValue.hexString }
     }
 
+    /// Voices available for the current language, sorted by quality (best first).
+    var availableVoices: [AVSpeechSynthesisVoice] {
+        let lang = Locale.current.language.languageCode?.identifier ?? "en"
+        return AVSpeechSynthesisVoice.speechVoices()
+            .filter { $0.language.hasPrefix(lang) }
+            .sorted { lhs, rhs in
+                lhs.quality.rawValue > rhs.quality.rawValue
+            }
+    }
+
     func load(from profile: UserProfile) {
         self.profile = profile
         self.name = profile.name
@@ -37,6 +50,7 @@ final class SettingsViewModel {
         self.aboutMe = profile.aboutMe
         self.responsePreference = profile.responsePreference
         self.favoriteColorHex = profile.favoriteColorHex
+        self.selectedVoiceID = profile.selectedVoiceID
         // Use ThemeManager as source of truth (profile may be stale if .id() rebuild interfered)
         self.selectedThemeID = ThemeManager.shared.currentTheme.id
     }
@@ -49,5 +63,40 @@ final class SettingsViewModel {
         profile.responsePreference = String(responsePreference.prefix(Self.maxResponsePrefLength))
         profile.favoriteColorHex = favoriteColorHex
         profile.themeID = selectedThemeID
+        profile.selectedVoiceID = selectedVoiceID
+    }
+
+    func previewVoice(_ voiceID: String) {
+        previewSynthesizer.stopSpeaking(at: .immediate)
+
+        #if os(iOS)
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .duckOthers])
+        try? session.setActive(true)
+        #endif
+
+        let utterance = AVSpeechUtterance(string: "Hello, I am Oberon")
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate
+        utterance.volume = 1.0
+
+        if voiceID.isEmpty {
+            // Auto: use best available (same logic as TTSService)
+            let lang = Locale.current.language.languageCode?.identifier ?? "en"
+            if let premium = AVSpeechSynthesisVoice.speechVoices()
+                .first(where: { $0.language.hasPrefix(lang) && $0.quality == .premium }) {
+                utterance.voice = premium
+            } else if let enhanced = AVSpeechSynthesisVoice.speechVoices()
+                .first(where: { $0.language.hasPrefix(lang) && $0.quality == .enhanced }) {
+                utterance.voice = enhanced
+            }
+        } else if let voice = AVSpeechSynthesisVoice(identifier: voiceID) {
+            utterance.voice = voice
+        }
+
+        previewSynthesizer.speak(utterance)
+    }
+
+    func stopPreview() {
+        previewSynthesizer.stopSpeaking(at: .immediate)
     }
 }

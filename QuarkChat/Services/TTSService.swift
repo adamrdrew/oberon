@@ -11,6 +11,9 @@ final class TTSService: NSObject {
     /// Called when TTS finishes speaking naturally (not on cancel).
     var onFinishedSpeaking: (() -> Void)?
 
+    /// Voice identifier persisted from user settings. Empty = auto (best available).
+    var selectedVoiceID: String = ""
+
     private let synthesizer = AVSpeechSynthesizer()
 
     override init() {
@@ -43,16 +46,19 @@ final class TTSService: NSObject {
         utterance.pitchMultiplier = 1.0
         utterance.volume = 1.0
 
-        // Use a premium voice if available, otherwise system default
-        let lang = Locale.current.language.languageCode?.identifier ?? "en"
-        if let premium = AVSpeechSynthesisVoice.speechVoices()
-            .first(where: { $0.language.hasPrefix(lang) && $0.quality == .premium }) {
-            utterance.voice = premium
-        } else if let enhanced = AVSpeechSynthesisVoice.speechVoices()
-            .first(where: { $0.language.hasPrefix(lang) && $0.quality == .enhanced }) {
-            utterance.voice = enhanced
+        // Use saved voice if set, otherwise best available
+        if !selectedVoiceID.isEmpty, let voice = AVSpeechSynthesisVoice(identifier: selectedVoiceID) {
+            utterance.voice = voice
+        } else {
+            let lang = Locale.current.language.languageCode?.identifier ?? "en"
+            if let premium = AVSpeechSynthesisVoice.speechVoices()
+                .first(where: { $0.language.hasPrefix(lang) && $0.quality == .premium }) {
+                utterance.voice = premium
+            } else if let enhanced = AVSpeechSynthesisVoice.speechVoices()
+                .first(where: { $0.language.hasPrefix(lang) && $0.quality == .enhanced }) {
+                utterance.voice = enhanced
+            }
         }
-        // Otherwise: no voice set → system default (most reliable)
 
         currentMessageID = messageID
         isSpeaking = true

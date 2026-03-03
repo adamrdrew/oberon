@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import AVFoundation
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
@@ -118,6 +119,41 @@ struct SettingsView: View {
                         }
                     }
 
+                    // MARK: - Voice
+
+                    settingsSection("Voice") {
+                        ScrollView {
+                            VStack(spacing: 0) {
+                                VoiceRow(
+                                    name: "Auto",
+                                    subtitle: "Best available",
+                                    isSelected: viewModel.selectedVoiceID.isEmpty
+                                ) {
+                                    Haptics.selection()
+                                    viewModel.selectedVoiceID = ""
+                                    viewModel.previewVoice("")
+                                }
+
+                                ForEach(viewModel.availableVoices, id: \.identifier) { voice in
+                                    Divider().padding(.leading, 16)
+                                    VoiceRow(
+                                        name: voice.name,
+                                        subtitle: voice.quality == .premium ? "Premium"
+                                            : voice.quality == .enhanced ? "Enhanced"
+                                            : nil,
+                                        isSelected: viewModel.selectedVoiceID == voice.identifier
+                                    ) {
+                                        Haptics.selection()
+                                        viewModel.selectedVoiceID = voice.identifier
+                                        viewModel.previewVoice(voice.identifier)
+                                    }
+                                }
+                            }
+                        }
+                        .frame(height: 200)
+                        .background(.ultraThinMaterial, in: .rect(cornerRadius: OTheme.cornerRadiusCard))
+                    }
+
                     // MARK: - Delete All Data
 
                     settingsSection("Data") {
@@ -159,13 +195,14 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
-                        // Revert live preview to original theme
+                        viewModel.stopPreview()
                         ThemeManager.shared.applyTheme(id: originalThemeID)
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
+                        viewModel.stopPreview()
                         viewModel.save(context: modelContext)
                         try? modelContext.save()
                         dismiss()
@@ -236,6 +273,7 @@ struct SettingsView: View {
             profile.responsePreference = ""
             profile.favoriteColorHex = "#1E2D4D"
             profile.themeID = "oberon"
+            profile.selectedVoiceID = ""
             profile.hasCompletedOnboarding = false
         }
 
@@ -289,6 +327,43 @@ struct ThemePreviewCard: View {
                             )
                     )
             }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Voice Row
+
+struct VoiceRow: View {
+    let name: String
+    let subtitle: String?
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Text(name)
+                    .font(OTheme.body)
+                    .foregroundStyle(OTheme.primary)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(OTheme.pipelineLabel)
+                        .foregroundStyle(OTheme.tertiary)
+                }
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(OTheme.caption.bold())
+                        .foregroundStyle(OTheme.accent)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
