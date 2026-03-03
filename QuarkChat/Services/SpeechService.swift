@@ -22,6 +22,9 @@ final class SpeechService {
     private var silenceTimer: Task<Void, Never>?
     private let silenceTimeout: Duration = .milliseconds(1500)
 
+    /// Throttle audio level updates to avoid Task spam on the audio thread
+    private var lastLevelUpdate: UInt64 = 0
+
     var isAvailable: Bool {
         speechRecognizer?.isAvailable ?? false
     }
@@ -40,11 +43,12 @@ final class SpeechService {
         let authorized = await requestPermission()
         guard authorized else { return }
 
-        // Configure audio session
+        // Configure audio session — .playAndRecord so sound effects and TTS
+        // can coexist without category switches.
         #if os(iOS)
         let audioSession = AVAudioSession.sharedInstance()
         do {
-            try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
+            try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .duckOthers])
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
             return
@@ -89,9 +93,15 @@ final class SpeechService {
         let recordingFormat = inputNode.outputFormat(forBus: 0)
 
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
+            // Guard zero-size buffers (happen during engine shutdown)
+            guard buffer.frameLength > 0 else { return }
             request.append(buffer)
 
-            // Calculate audio level
+            // Throttle audio level updates (~10/sec instead of ~43/sec)
+            let now = DispatchTime.now().uptimeNanoseconds
+            guard let self, now - self.lastLevelUpdate > 100_000_000 else { return }
+            self.lastLevelUpdate = now
+
             let channelData = buffer.floatChannelData?[0]
             let frameLength = Int(buffer.frameLength)
             if let data = channelData, frameLength > 0 {
@@ -101,7 +111,7 @@ final class SpeechService {
                 }
                 let average = sum / Float(frameLength)
                 Task { @MainActor in
-                    self?.audioLevel = min(average * 10, 1.0)
+                    self.audioLevel = min(average * 10, 1.0)
                 }
             }
         }
@@ -138,24 +148,24 @@ final class SpeechService {
     }
 
     private func stopRecordingInternal() {
+        // Guard against double-stop (silence timer, isFinal, and user stop can all race)
+        guard audioEngine != nil else { return }
+
         silenceTimer?.cancel()
         silenceTimer = nil
 
-        recognitionRequest?.endAudio()
+        // Cancel recognition first to prevent new callbacks
         recognitionTask?.cancel()
+        recognitionTask = nil
+        recognitionRequest?.endAudio()
+        recognitionRequest = nil
+
+        // Tear down engine
         audioEngine?.stop()
         audioEngine?.inputNode.removeTap(onBus: 0)
-        audioEngine?.reset() // Release audio hardware so TTS can use it
-
         audioEngine = nil
-        recognitionRequest = nil
-        recognitionTask = nil
+
         isRecording = false
         audioLevel = 0
-
-        // Deactivate audio session so TTS can play
-        #if os(iOS)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        #endif
     }
 }

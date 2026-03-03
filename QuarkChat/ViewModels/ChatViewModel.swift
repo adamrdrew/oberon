@@ -4,6 +4,7 @@ import SwiftUI
 import SwiftData
 import FoundationModels
 import MapKit
+import AVFoundation
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
@@ -118,6 +119,7 @@ final class ChatViewModel {
         guard !text.isEmpty, !isGenerating, let conversation, let modelContext else { return }
 
         inputText = ""
+        if isVoiceMode { SoundEffectService.playSent() }
         errorMessage = nil
         showGreeting = false
 
@@ -146,6 +148,7 @@ final class ChatViewModel {
 
         // Stream response — session handles tool calling transparently
         showTypingIndicator = true
+        if isVoiceMode { SoundEffectService.startThinking() }
 
         // Start polling for live pipeline steps (detached to avoid MainActor contention)
         let stepPollTask = Task.detached { [weak self] in
@@ -188,9 +191,10 @@ final class ChatViewModel {
             livePipelineSteps = []
             isGenerating = false
             chatService.clearStreamingState()
-            // Voice mode: restart recording so user can try again
             if isVoiceMode {
+                SoundEffectService.stopThinking()
                 voiceModeStatus = .listening
+                SoundEffectService.playListening()
                 Task { await speechService.startRecording() }
             }
             return
@@ -234,6 +238,11 @@ final class ChatViewModel {
         // Clear live pipeline steps now that they're persisted
         livePipelineSteps = []
         Haptics.landed()
+
+        // Voice mode: stop thinking loop before TTS speaks
+        if isVoiceMode {
+            SoundEffectService.stopThinking()
+        }
 
         // Voice mode: auto-speak the response
         if isVoiceMode, let lastAssistant = messages.last, lastAssistant.role == "assistant" {
@@ -281,13 +290,29 @@ final class ChatViewModel {
             _ = speechService.stopRecording()
         }
         ttsService.stop()
+        SoundEffectService.stopThinking()
         Haptics.tap()
+
+        // Release the audio session so other apps can use audio hardware
+        #if os(iOS)
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        #endif
     }
 
     private func enableVoiceMode() {
         isVoiceMode = true
         voiceModeStatus = .listening
         Haptics.tap()
+
+        // Set up audio session once for the entire voice mode lifecycle.
+        // All services use the same category/mode/options → no reconfigurations.
+        #if os(iOS)
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .duckOthers])
+        try? session.setActive(true)
+        #endif
+
+        SoundEffectService.playListening()
 
         speechService.onSpeechFinalized = { [weak self] text in
             guard let self, self.isVoiceMode else { return }
@@ -305,6 +330,7 @@ final class ChatViewModel {
         ttsService.onFinishedSpeaking = { [weak self] in
             guard let self, self.isVoiceMode else { return }
             self.voiceModeStatus = .listening
+            SoundEffectService.playListening()
             Task { await self.speechService.startRecording() }
         }
 

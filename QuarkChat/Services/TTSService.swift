@@ -30,10 +30,11 @@ final class TTSService: NSObject {
         let cleanText = stripMarkdown(text)
         guard !cleanText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
 
-        // Configure audio session for playback
+        // Configure audio session — use .playAndRecord so we don't fight
+        // with SpeechService / SoundEffectService over the session category.
         #if os(iOS)
         let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .default)
+        try? session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .duckOthers])
         try? session.setActive(true)
         #endif
 
