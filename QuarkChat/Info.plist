@@ -6,9 +6,5 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Oberon uses speech recognition for voice input.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Oberon uses the microphone for voice input.</string>
 </dict>
 </plist>
