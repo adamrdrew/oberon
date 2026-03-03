@@ -73,8 +73,11 @@ final class ChatService {
         var finalText = ""
 
         for try await snapshot in stream {
-            currentStreamText = snapshot.content
-            finalText = snapshot.content
+            // During tool calls, the framework may emit "null" as literal text — skip it
+            let content = snapshot.content
+            guard content != "null" else { continue }
+            currentStreamText = content
+            finalText = content
         }
 
         _ = try await stream.collect()
