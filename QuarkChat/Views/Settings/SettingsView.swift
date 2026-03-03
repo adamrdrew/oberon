@@ -4,10 +4,12 @@ import SwiftData
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppState.self) private var appState
 
     @State private var viewModel = SettingsViewModel()
     @State private var profile: UserProfile?
     @State private var originalThemeID: String = "quark"
+    @State private var showDeleteConfirmation = false
 
     var body: some View {
         NavigationStack {
@@ -114,6 +116,26 @@ struct SettingsView: View {
                         }
                     }
 
+                    // MARK: - Delete All Data
+
+                    settingsSection("Data") {
+                        Button(role: .destructive) {
+                            showDeleteConfirmation = true
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 15))
+                                Text("Delete All Data")
+                                    .font(QTheme.label)
+                            }
+                            .foregroundStyle(QTheme.quarkSignalRed)
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(.ultraThinMaterial, in: .rect(cornerRadius: QTheme.cornerRadiusCard))
+                        }
+                        .buttonStyle(.plain)
+                    }
+
                     Spacer(minLength: 40)
                 }
                 .padding(.horizontal, 24)
@@ -124,6 +146,14 @@ struct SettingsView: View {
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
+            .alert("Delete All Data", isPresented: $showDeleteConfirmation) {
+                Button("Cancel", role: .cancel) { }
+                Button("Delete Everything", role: .destructive) {
+                    deleteAllData()
+                }
+            } message: {
+                Text("This will delete all conversations and reset your profile. This cannot be undone.")
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -186,11 +216,42 @@ struct SettingsView: View {
             viewModel.load(from: existing)
         }
     }
+
+    // MARK: - Delete All Data
+
+    private func deleteAllData() {
+        // Delete all conversations (messages cascade via relationship)
+        let conversations = (try? modelContext.fetch(FetchDescriptor<Conversation>())) ?? []
+        for conversation in conversations {
+            modelContext.delete(conversation)
+        }
+
+        // Reset profile for onboarding
+        if let profile {
+            profile.name = ""
+            profile.location = ""
+            profile.aboutMe = ""
+            profile.responsePreference = ""
+            profile.favoriteColorHex = "#1E2D4D"
+            profile.themeID = "quark"
+            profile.hasCompletedOnboarding = false
+        }
+
+        try? modelContext.save()
+
+        // Reset theme to default
+        ThemeManager.shared.applyTheme(id: "quark")
+
+        // Clear selected conversation and trigger onboarding
+        appState.selectedConversation = nil
+        appState.showOnboarding = true
+        dismiss()
+    }
 }
 
 // MARK: - Theme Preview Card
 
-private struct ThemePreviewCard: View {
+struct ThemePreviewCard: View {
     let theme: QuarkColorTheme
     let isSelected: Bool
     let action: () -> Void

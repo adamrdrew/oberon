@@ -6,6 +6,7 @@ import FoundationModels
 final class AppState {
     var selectedConversation: Conversation?
     var modelAvailability: SystemLanguageModel.Availability = .unavailable(.modelNotReady)
+    var showOnboarding = false
 
     func checkAvailability() {
         let model = SystemLanguageModel.default

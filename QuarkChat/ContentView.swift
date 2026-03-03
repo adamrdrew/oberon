@@ -41,10 +41,15 @@ struct ContentView: View {
                 }
             }
         }
+        .id(ThemeManager.shared.currentTheme.id)
         .onChange(of: appState.selectedConversation) { _, newValue in
             if newValue == nil && hasInitialized && appState.isModelAvailable {
                 appState.selectedConversation = Conversation()
             }
+        }
+        .sheet(isPresented: $appStateBindable.showOnboarding) {
+            OnboardingView()
+                .interactiveDismissDisabled()
         }
         .task {
             // Load persisted theme once at startup (not on .id() rebuilds)
@@ -52,16 +57,29 @@ struct ContentView: View {
                 let profileDescriptor = FetchDescriptor<UserProfile>()
                 if let profile = try? modelContext.fetch(profileDescriptor).first {
                     ThemeManager.shared.applyTheme(id: profile.themeID)
+                    // Check onboarding status
+                    if !profile.hasCompletedOnboarding {
+                        appState.showOnboarding = true
+                    }
+                } else {
+                    // No profile yet — onboarding will create one
+                    appState.showOnboarding = true
                 }
                 ThemeManager.shared.hasLoadedInitialTheme = true
             }
 
             appState.checkAvailability()
-            if appState.isModelAvailable && appState.selectedConversation == nil {
+            if !appState.showOnboarding && appState.isModelAvailable && appState.selectedConversation == nil {
                 let conversation = Conversation()
                 appState.selectedConversation = conversation
             }
             hasInitialized = true
+        }
+        .onChange(of: appState.showOnboarding) { _, isShowing in
+            // After onboarding dismisses, create the initial conversation
+            if !isShowing && appState.isModelAvailable && appState.selectedConversation == nil {
+                appState.selectedConversation = Conversation()
+            }
         }
     }
 }

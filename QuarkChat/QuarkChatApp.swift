@@ -37,7 +37,6 @@ struct QuarkChatApp: App {
             ContentView()
                 .environment(appState)
                 .environment(themeManager)
-                .id(themeManager.currentTheme.id)
         }
         .modelContainer(container)
     }

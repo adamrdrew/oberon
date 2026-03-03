@@ -11,6 +11,7 @@ class UserProfile {
     var responsePreference: String = ""
     var favoriteColorHex: String = "#1E2D4D"
     var themeID: String = "quark"
+    var hasCompletedOnboarding: Bool = false
 
     var favoriteColor: Color {
         Color(hex: favoriteColorHex) ?? .blue
