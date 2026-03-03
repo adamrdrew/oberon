@@ -23,6 +23,20 @@ struct ConversationListView: View {
         }
     }
 
+    private var userInitial: String {
+        if let name = userProfile?.name, let first = name.first {
+            return String(first).uppercased()
+        }
+        return "?"
+    }
+
+    private var userName: String {
+        if let name = userProfile?.name, !name.isEmpty {
+            return name
+        }
+        return "User"
+    }
+
     var body: some View {
         Group {
             if isEditing {
@@ -32,90 +46,12 @@ struct ConversationListView: View {
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            StripeAccentView()
+            sidebarHeader
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            sidebarFooter
         }
         .searchable(text: $searchText, prompt: "Search conversations")
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    withAnimation(.spring(duration: 0.4, bounce: 0.25)) {
-                        _ = viewModel.createNewConversation(
-                            modelContext: modelContext,
-                            userProfile: userProfile,
-                            appState: appState
-                        )
-                    }
-                } label: {
-                    Label("New Chat", systemImage: "plus.bubble")
-                        .symbolEffect(.bounce, value: viewModel.isCreatingConversation)
-                }
-                .buttonStyle(.glass)
-                .disabled(viewModel.isCreatingConversation || isEditing)
-            }
-
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showSettings = true
-                } label: {
-                    Label("Settings", systemImage: "gearshape")
-                }
-                .buttonStyle(.glass)
-            }
-
-            #if os(iOS)
-            ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    withAnimation(.spring(duration: 0.3, bounce: 0.15)) {
-                        if isEditing {
-                            multiSelection.removeAll()
-                        }
-                        isEditing.toggle()
-                    }
-                } label: {
-                    Text(isEditing ? "Done" : "Edit")
-                        .font(QTheme.label)
-                }
-                .disabled(conversations.isEmpty)
-            }
-
-            if isEditing {
-                ToolbarItem(placement: .bottomBar) {
-                    Button(role: .destructive) {
-                        showDeleteConfirmation = true
-                    } label: {
-                        Text("Delete (\(multiSelection.count))")
-                            .font(QTheme.label)
-                    }
-                    .disabled(multiSelection.isEmpty)
-                }
-            }
-            #else
-            ToolbarItem(placement: .automatic) {
-                Button {
-                    withAnimation(.spring(duration: 0.3, bounce: 0.15)) {
-                        if isEditing {
-                            multiSelection.removeAll()
-                        }
-                        isEditing.toggle()
-                    }
-                } label: {
-                    Label(isEditing ? "Done" : "Edit", systemImage: isEditing ? "checkmark.circle" : "checkmark.circle")
-                }
-                .disabled(conversations.isEmpty)
-            }
-
-            if isEditing {
-                ToolbarItem(placement: .destructiveAction) {
-                    Button(role: .destructive) {
-                        showDeleteConfirmation = true
-                    } label: {
-                        Label("Delete (\(multiSelection.count))", systemImage: "trash")
-                    }
-                    .disabled(multiSelection.isEmpty)
-                }
-            }
-            #endif
-        }
         .alert("Delete Conversations", isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
             Button("Delete \(multiSelection.count) Conversation\(multiSelection.count == 1 ? "" : "s")", role: .destructive) {
@@ -136,10 +72,130 @@ struct ConversationListView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView()
         }
-        .navigationTitle("QuarkChat")
         .task {
             loadUserProfile()
         }
+    }
+
+    // MARK: - Sidebar Header
+
+    @ViewBuilder
+    private var sidebarHeader: some View {
+        VStack(spacing: 0) {
+            StripeAccentView()
+
+            VStack(spacing: 2) {
+                // New Chat
+                Button {
+                    withAnimation(.spring(duration: 0.4, bounce: 0.25)) {
+                        _ = viewModel.createNewConversation(
+                            modelContext: modelContext,
+                            userProfile: userProfile,
+                            appState: appState
+                        )
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "plus.bubble")
+                            .font(.system(size: 15))
+                            .frame(width: 20)
+                        Text("New Chat")
+                            .font(QTheme.label)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 9)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(viewModel.isCreatingConversation || isEditing)
+                .opacity(isEditing ? 0.4 : 1)
+
+                // Edit / Done
+                Button {
+                    withAnimation(.spring(duration: 0.3, bounce: 0.15)) {
+                        if isEditing {
+                            multiSelection.removeAll()
+                        }
+                        isEditing.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: isEditing ? "checkmark.circle" : "pencil")
+                            .font(.system(size: 15))
+                            .frame(width: 20)
+                        Text(isEditing ? "Done" : "Edit")
+                            .font(QTheme.label)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 9)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(conversations.isEmpty)
+
+                // Delete (only in edit mode)
+                if isEditing {
+                    Button(role: .destructive) {
+                        showDeleteConfirmation = true
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "trash")
+                                .font(.system(size: 15))
+                                .frame(width: 20)
+                            Text("Delete (\(multiSelection.count))")
+                                .font(QTheme.label)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 9)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(multiSelection.isEmpty ? QTheme.quarkTertiary : QTheme.quarkSignalRed)
+                    .disabled(multiSelection.isEmpty)
+                }
+            }
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+        }
+        .background(.background)
+    }
+
+    // MARK: - Sidebar Footer
+
+    @ViewBuilder
+    private var sidebarFooter: some View {
+        VStack(spacing: 0) {
+            Divider()
+
+            Button {
+                showSettings = true
+            } label: {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(QTheme.quarkAccent)
+                            .frame(width: 30, height: 30)
+                        Text(userInitial)
+                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(.white)
+                    }
+
+                    Text(userName)
+                        .font(QTheme.label)
+                        .foregroundStyle(QTheme.quarkPrimary)
+
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+        .background(.background)
     }
 
     // MARK: - Navigation List (normal mode)

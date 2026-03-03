@@ -22,18 +22,6 @@ struct ContentView: View {
                 if let conversation = appState.selectedConversation {
                     ChatView(conversation: conversation)
                         .id(conversation.id)
-                } else {
-                    VStack(spacing: 12) {
-                        Image(systemName: "bubble.left.and.bubble.right")
-                            .font(.system(size: 40, design: .monospaced))
-                            .foregroundStyle(QTheme.quarkAccent)
-                        Text("QuarkChat")
-                            .font(QTheme.displayLarge)
-                            .foregroundStyle(QTheme.quarkPrimary)
-                        Text("Select a conversation or start a new chat.")
-                            .font(QTheme.bodySmall)
-                            .foregroundStyle(QTheme.quarkSecondary)
-                    }
                 }
             } else {
                 VStack(spacing: 12) {
@@ -51,6 +39,11 @@ struct ContentView: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 40)
                 }
+            }
+        }
+        .onChange(of: appState.selectedConversation) { _, newValue in
+            if newValue == nil && hasInitialized && appState.isModelAvailable {
+                appState.selectedConversation = Conversation()
             }
         }
         .task {

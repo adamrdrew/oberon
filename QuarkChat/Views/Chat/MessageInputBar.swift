@@ -27,6 +27,9 @@ struct MessageInputBar: View {
                 .onSubmit {
                     if !isGenerating && !isEmpty {
                         onSend()
+                        #if os(iOS)
+                        isFocused = false
+                        #endif
                     }
                 }
 
@@ -73,6 +76,9 @@ struct MessageInputBar: View {
                 // Send button
                 Button {
                     onSend()
+                    #if os(iOS)
+                    isFocused = false
+                    #endif
                 } label: {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.system(size: 22, design: .monospaced))
@@ -87,11 +93,13 @@ struct MessageInputBar: View {
         .glassEffect(in: .rect(cornerRadius: QTheme.cornerRadiusInput))
         .padding(.horizontal, QTheme.contentPadding)
         .padding(.bottom, 8)
+        #if os(macOS)
         .onChange(of: isGenerating) { wasGenerating, nowGenerating in
             if wasGenerating && !nowGenerating {
                 isFocused = true
             }
         }
+        #endif
         // Show live transcription below
         .overlay(alignment: .top) {
             if let speechService, speechService.isRecording, !speechService.transcribedText.isEmpty {
