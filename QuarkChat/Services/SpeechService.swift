@@ -22,9 +22,6 @@ final class SpeechService {
     private var silenceTimer: Task<Void, Never>?
     private let silenceTimeout: Duration = .milliseconds(1500)
 
-    /// Throttle audio level updates to avoid Task spam on the audio thread
-    private var lastLevelUpdate: UInt64 = 0
-
     var isAvailable: Bool {
         speechRecognizer?.isAvailable ?? false
     }
@@ -38,10 +35,25 @@ final class SpeechService {
     }
 
     func startRecording() async {
-        guard !isRecording else { return }
+        guard !isRecording else {
+            print("[Speech] startRecording: already recording, skipping")
+            return
+        }
 
         let authorized = await requestPermission()
-        guard authorized else { return }
+        guard authorized else {
+            print("[Speech] startRecording: speech recognition not authorized")
+            return
+        }
+
+        // Microphone is a separate permission from speech recognition.
+        // On iOS this is covered by AVAudioSession, but on macOS it must be explicit.
+        let micAllowed = await AVAudioApplication.requestRecordPermission()
+        guard micAllowed else {
+            print("[Speech] startRecording: microphone permission denied")
+            return
+        }
+        print("[Speech] startRecording: authorized (speech + mic)")
 
         // Configure audio session — .playAndRecord so sound effects and TTS
         // can coexist without category switches.
@@ -51,6 +63,7 @@ final class SpeechService {
             try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .duckOthers])
             try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
+            print("[Speech] startRecording: audio session error: \(error)")
             return
         }
         #endif
@@ -59,13 +72,18 @@ final class SpeechService {
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
 
-        guard let recognizer = speechRecognizer, recognizer.isAvailable else { return }
+        guard let recognizer = speechRecognizer, recognizer.isAvailable else {
+            print("[Speech] startRecording: recognizer unavailable (recognizer=\(speechRecognizer != nil), available=\(speechRecognizer?.isAvailable ?? false))")
+            return
+        }
+        print("[Speech] startRecording: recognizer available, locale=\(recognizer.locale)")
 
         recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
             Task { @MainActor in
                 guard let self else { return }
                 if let result {
                     self.transcribedText = result.bestTranscription.formattedString
+                    print("[Speech] partial: \"\(result.bestTranscription.formattedString)\" isFinal=\(result.isFinal)")
 
                     if result.isFinal {
                         self.silenceTimer?.cancel()
@@ -82,7 +100,8 @@ final class SpeechService {
                         self.resetSilenceTimer()
                     }
                 }
-                if error != nil {
+                if let error {
+                    print("[Speech] recognition error: \(error)")
                     self.silenceTimer?.cancel()
                     self.stopRecordingInternal()
                 }
@@ -91,17 +110,14 @@ final class SpeechService {
 
         let inputNode = engine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
+        print("[Speech] inputNode format: sampleRate=\(recordingFormat.sampleRate) channels=\(recordingFormat.channelCount)")
 
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
             // Guard zero-size buffers (happen during engine shutdown)
             guard buffer.frameLength > 0 else { return }
             request.append(buffer)
 
-            // Throttle audio level updates (~10/sec instead of ~43/sec)
-            let now = DispatchTime.now().uptimeNanoseconds
-            guard let self, now - self.lastLevelUpdate > 100_000_000 else { return }
-            self.lastLevelUpdate = now
-
+            // Calculate audio level
             let channelData = buffer.floatChannelData?[0]
             let frameLength = Int(buffer.frameLength)
             if let data = channelData, frameLength > 0 {
@@ -111,7 +127,7 @@ final class SpeechService {
                 }
                 let average = sum / Float(frameLength)
                 Task { @MainActor in
-                    self.audioLevel = min(average * 10, 1.0)
+                    self?.audioLevel = min(average * 10, 1.0)
                 }
             }
         }
@@ -123,7 +139,9 @@ final class SpeechService {
             recognitionRequest = request
             isRecording = true
             transcribedText = ""
+            print("[Speech] startRecording: engine started successfully")
         } catch {
+            print("[Speech] startRecording: engine start failed: \(error)")
             stopRecordingInternal()
         }
     }
@@ -154,17 +172,15 @@ final class SpeechService {
         silenceTimer?.cancel()
         silenceTimer = nil
 
-        // Cancel recognition first to prevent new callbacks
-        recognitionTask?.cancel()
-        recognitionTask = nil
         recognitionRequest?.endAudio()
-        recognitionRequest = nil
-
-        // Tear down engine
+        recognitionTask?.cancel()
         audioEngine?.stop()
         audioEngine?.inputNode.removeTap(onBus: 0)
-        audioEngine = nil
+        audioEngine?.reset()
 
+        audioEngine = nil
+        recognitionRequest = nil
+        recognitionTask = nil
         isRecording = false
         audioLevel = 0
     }
