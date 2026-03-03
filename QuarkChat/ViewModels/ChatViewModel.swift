@@ -139,11 +139,13 @@ final class ChatViewModel {
         // Stream response — session handles tool calling transparently
         showTypingIndicator = true
 
-        // Start polling for live pipeline steps
-        let stepPollTask = Task {
+        // Start polling for live pipeline steps (detached to avoid MainActor contention)
+        let stepPollTask = Task.detached { [weak self] in
             while !Task.isCancelled {
                 let steps = await ToolResultStore.shared.pipelineSteps
-                self.livePipelineSteps = steps
+                await MainActor.run {
+                    self?.livePipelineSteps = steps
+                }
                 try? await Task.sleep(for: .milliseconds(200))
             }
         }

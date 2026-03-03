@@ -56,17 +56,14 @@ final class ChatService {
 
     // MARK: - Streaming Response (Persistent Session)
 
-    @MainActor
     func streamResponse(prompt: String) async throws -> String {
         guard let session else {
             throw ChatError.modelUnavailable
         }
 
-        isGenerating = true
-        currentStreamText = ""
-
-        defer {
-            isGenerating = false
+        await MainActor.run {
+            isGenerating = true
+            currentStreamText = ""
         }
 
         let stream = session.streamResponse(to: prompt)
@@ -76,11 +73,15 @@ final class ChatService {
             // During tool calls, the framework may emit "null" as literal text — skip it
             let content = snapshot.content
             guard content != "null" else { continue }
-            currentStreamText = content
+            await MainActor.run {
+                currentStreamText = content
+            }
             finalText = content
         }
 
-        _ = try await stream.collect()
+        await MainActor.run {
+            isGenerating = false
+        }
 
         // Update token estimate after response
         estimatedTokens += TokenBudget.estimateTokens(prompt) + TokenBudget.estimateTokens(finalText)

@@ -1,5 +1,4 @@
 import Foundation
-import SwiftUI
 
 // MARK: - Pipeline Step Tracking
 
@@ -15,15 +14,6 @@ enum StepCategory: String, Codable, Sendable {
         case .calculation: return "function"
         case .geoSearch: return "map"
         case .weather: return "cloud.sun"
-        }
-    }
-
-    var color: Color {
-        switch self {
-        case .webSearch: return QTheme.quarkTeal
-        case .calculation: return QTheme.quarkAccent
-        case .geoSearch: return QTheme.quarkNavy
-        case .weather: return QTheme.quarkTeal.opacity(0.7)
         }
     }
 }
@@ -42,7 +32,7 @@ struct PipelineStep: Codable, Identifiable, Sendable {
     var completedAt: Date?
     var status: StepStatus
 
-    init(category: StepCategory, label: String) {
+    nonisolated init(category: StepCategory, label: String) {
         self.id = UUID()
         self.category = category
         self.label = label

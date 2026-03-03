@@ -7,7 +7,16 @@ struct PipelineStatusView: View {
     @State private var appearedStepIDs: Set<UUID> = []
 
     private var dominantColor: Color {
-        steps.last?.category.color ?? .gray
+        steps.last.map { categoryColor($0.category) } ?? .gray
+    }
+
+    private func categoryColor(_ category: StepCategory) -> Color {
+        switch category {
+        case .webSearch: return QTheme.quarkTeal
+        case .calculation: return QTheme.quarkAccent
+        case .geoSearch: return QTheme.quarkNavy
+        case .weather: return QTheme.quarkTeal.opacity(0.7)
+        }
     }
 
     var body: some View {
@@ -31,7 +40,7 @@ struct PipelineStatusView: View {
         HStack(spacing: 8) {
             // Left color band
             RoundedRectangle(cornerRadius: 1.5)
-                .fill(step.category.color)
+                .fill(categoryColor(step.category))
                 .frame(width: 3, height: isCompact ? 16 : 20)
                 .opacity(step.status == .active && appearedStepIDs.contains(step.id) ? 1 : 0.6)
                 .animation(
@@ -52,7 +61,7 @@ struct PipelineStatusView: View {
             if step.status == .completed {
                 Text("OK")
                     .font(QTheme.timestamp)
-                    .foregroundStyle(step.category.color)
+                    .foregroundStyle(categoryColor(step.category))
             } else if step.status == .failed {
                 Text("---")
                     .font(QTheme.timestamp)

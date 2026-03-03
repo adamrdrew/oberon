@@ -30,7 +30,7 @@ struct RichAction: Codable, Identifiable, Sendable {
         true
     }
 
-    init(
+    nonisolated init(
         type: RichActionType,
         label: String,
         subtitle: String = "",
