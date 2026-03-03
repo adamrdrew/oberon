@@ -15,7 +15,7 @@ struct SuggestedRepliesView: View {
                     )
                 }
             }
-            .padding(.horizontal, QTheme.contentPadding)
+            .padding(.horizontal, OTheme.contentPadding)
         }
         .padding(.vertical, 4)
     }
@@ -33,7 +33,7 @@ private struct SuggestedReplyButton: View {
             onTap(reply.text)
         } label: {
             Text(reply.text)
-                .font(QTheme.suggestedReply)
+                .font(OTheme.suggestedReply)
         }
         .buttonStyle(.glass)
         .opacity(appeared ? 1 : 0)

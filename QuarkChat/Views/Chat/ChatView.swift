@@ -66,7 +66,7 @@ struct ChatView: View {
                             ForEach(viewModel.messages, id: \.id) { message in
                                 MessageBubble(
                                     message: message,
-                                    userColor: Color(hex: viewModel.userBubbleColor) ?? QTheme.quarkNavy,
+                                    userColor: Color(hex: viewModel.userBubbleColor) ?? OTheme.navy,
                                     onActionExecute: { action in
                                         viewModel.executeAction(action)
                                     },
@@ -163,16 +163,16 @@ struct ChatView: View {
     @ViewBuilder
     private var greetingContent: some View {
         VStack(spacing: 8) {
-            Text("QUARK")
-                .font(QTheme.sectionHeader)
+            Text("OBERON")
+                .font(OTheme.sectionHeader)
                 .textCase(.uppercase)
                 .tracking(3)
-                .foregroundStyle(QTheme.quarkTertiary)
+                .foregroundStyle(OTheme.tertiary)
                 .opacity(greetingAppeared ? 1 : 0)
 
             Image(systemName: "bubble.left.and.bubble.right.fill")
                 .font(.system(size: 48, design: .monospaced))
-                .foregroundStyle(QTheme.quarkAccent)
+                .foregroundStyle(OTheme.accent)
                 .padding(.bottom, 4)
                 .scaleEffect(greetingAppeared ? 1 : 0.6)
                 .opacity(greetingAppeared ? 1 : 0)
@@ -183,8 +183,8 @@ struct ChatView: View {
 
             if let headline = viewModel.greetingHeadline {
                 Text(headline)
-                    .font(QTheme.displayLarge)
-                    .foregroundStyle(QTheme.quarkPrimary)
+                    .font(OTheme.displayLarge)
+                    .foregroundStyle(OTheme.primary)
                     .multilineTextAlignment(.center)
                     .scaleEffect(greetingAppeared ? 1 : 0.9)
                     .opacity(greetingAppeared ? 1 : 0)
@@ -192,7 +192,7 @@ struct ChatView: View {
                 if let subtitle = viewModel.greetingSubtitle {
                     Text(subtitle)
                         .font(.system(size: 15, weight: .regular, design: .monospaced))
-                        .foregroundStyle(QTheme.quarkSecondary)
+                        .foregroundStyle(OTheme.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 40)
                         .opacity(greetingAppeared ? 1 : 0)

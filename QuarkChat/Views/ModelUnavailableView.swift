@@ -38,15 +38,15 @@ struct ModelUnavailableView: View {
                     .opacity(appeared ? 1 : 0)
 
                 Text(headline)
-                    .font(QTheme.displayLarge)
-                    .foregroundStyle(QTheme.quarkPrimary)
+                    .font(OTheme.displayLarge)
+                    .foregroundStyle(OTheme.primary)
                     .multilineTextAlignment(.center)
                     .scaleEffect(appeared ? 1 : 0.9)
                     .opacity(appeared ? 1 : 0)
 
                 Text(subtitle)
                     .font(.system(size: 14, weight: .regular, design: .monospaced))
-                    .foregroundStyle(QTheme.quarkSecondary)
+                    .foregroundStyle(OTheme.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
                     .opacity(appeared ? 1 : 0)
@@ -59,15 +59,15 @@ struct ModelUnavailableView: View {
                         }
                     } label: {
                         Label("Open Settings", systemImage: "gear")
-                            .font(QTheme.label)
+                            .font(OTheme.label)
                     }
                     .buttonStyle(.glass)
                     .padding(.top, 8)
                     .opacity(appeared ? 1 : 0)
                     #else
                     Text("Open System Settings > Apple Intelligence & Siri")
-                        .font(QTheme.caption)
-                        .foregroundStyle(QTheme.quarkTertiary)
+                        .font(OTheme.caption)
+                        .foregroundStyle(OTheme.tertiary)
                         .padding(.top, 4)
                         .opacity(appeared ? 1 : 0)
                     #endif
@@ -84,7 +84,7 @@ struct ModelUnavailableView: View {
                         onRetry()
                     } label: {
                         Text("Check Again")
-                            .font(QTheme.label)
+                            .font(OTheme.label)
                     }
                     .buttonStyle(.glass)
                     .padding(.top, 12)
@@ -96,14 +96,14 @@ struct ModelUnavailableView: View {
 
             // Bottom branding
             VStack(spacing: 4) {
-                Text("QUARK")
-                    .font(QTheme.sectionHeader)
+                Text("OBERON")
+                    .font(OTheme.sectionHeader)
                     .textCase(.uppercase)
                     .tracking(3)
-                    .foregroundStyle(QTheme.quarkTertiary)
+                    .foregroundStyle(OTheme.tertiary)
                 Text("On-device AI chat")
-                    .font(QTheme.caption)
-                    .foregroundStyle(QTheme.quarkTertiary.opacity(0.6))
+                    .font(OTheme.caption)
+                    .foregroundStyle(OTheme.tertiary.opacity(0.6))
             }
             .opacity(appeared ? 1 : 0)
             .padding(.bottom, 32)
@@ -134,9 +134,9 @@ struct ModelUnavailableView: View {
     }
 
     private var iconColor: Color {
-        if isDeviceIneligible { return QTheme.quarkSignalRed }
-        if isDisabled { return QTheme.quarkAccent }
-        return QTheme.quarkTeal
+        if isDeviceIneligible { return OTheme.signalRed }
+        if isDisabled { return OTheme.accent }
+        return OTheme.teal
     }
 
     private var headline: String {
@@ -147,10 +147,10 @@ struct ModelUnavailableView: View {
 
     private var subtitle: String {
         if isDeviceIneligible {
-            return "Quark requires Apple Intelligence, which isn't available on this device."
+            return "Oberon requires Apple Intelligence, which isn't available on this device."
         }
         if isDisabled {
-            return "Quark needs Apple Intelligence to work. Enable it in Settings to get started."
+            return "Oberon needs Apple Intelligence to work. Enable it in Settings to get started."
         }
         return "Apple Intelligence is downloading. This usually takes a few minutes."
     }

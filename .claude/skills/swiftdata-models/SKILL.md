@@ -1,4 +1,4 @@
-# SwiftData Models — QuarkChat
+# SwiftData Models — Oberon
 
 ## CloudKit Constraints — MUST FOLLOW
 
@@ -90,14 +90,14 @@ final class UserProfile {
 ```swift
 // Synced configuration (Conversation, Message)
 let syncedConfig = ModelConfiguration(
-    "QuarkChat",
+    "Oberon",
     schema: Schema([Conversation.self, Message.self]),
     cloudKitDatabase: .automatic
 )
 
 // Local-only configuration (UserProfile)
 let localConfig = ModelConfiguration(
-    "QuarkChatLocal",
+    "OberonLocal",
     schema: Schema([UserProfile.self]),
     cloudKitDatabase: .none
 )

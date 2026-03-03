@@ -11,16 +11,16 @@ struct WikipediaCardView: View {
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: "book.pages")
                     .font(.system(size: 16, design: .monospaced))
-                    .foregroundStyle(QTheme.quarkSecondary)
+                    .foregroundStyle(OTheme.secondary)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(data.title)
-                        .font(QTheme.conversationTitle)
+                        .font(OTheme.conversationTitle)
 
                     if let description = data.description {
                         Text(description)
-                            .font(QTheme.caption)
-                            .foregroundStyle(QTheme.quarkSecondary)
+                            .font(OTheme.caption)
+                            .foregroundStyle(OTheme.secondary)
                             .lineLimit(1)
                     }
                 }
@@ -45,15 +45,15 @@ struct WikipediaCardView: View {
                                         .aspectRatio(contentMode: .fill)
                                 case .failure:
                                     Rectangle()
-                                        .fill(QTheme.quarkSurface.opacity(0.3))
+                                        .fill(OTheme.surface.opacity(0.3))
                                         .overlay {
                                             Image(systemName: "photo")
-                                                .font(QTheme.caption)
-                                                .foregroundStyle(QTheme.quarkTertiary)
+                                                .font(OTheme.caption)
+                                                .foregroundStyle(OTheme.tertiary)
                                         }
                                 case .empty:
                                     Rectangle()
-                                        .fill(QTheme.quarkSurface.opacity(0.15))
+                                        .fill(OTheme.surface.opacity(0.15))
                                         .overlay { ProgressView() }
                                 @unknown default:
                                     Color.clear
@@ -61,7 +61,7 @@ struct WikipediaCardView: View {
                             }
                             .frame(height: 80)
                             .frame(maxWidth: .infinity)
-                            .clipShape(.rect(cornerRadius: QTheme.cornerRadiusSmall))
+                            .clipShape(.rect(cornerRadius: OTheme.cornerRadiusSmall))
                         }
                         .buttonStyle(.plain)
                     }
@@ -70,8 +70,8 @@ struct WikipediaCardView: View {
 
             // Excerpt
             Text(data.extract)
-                .font(QTheme.bodySmall)
-                .foregroundStyle(QTheme.quarkPrimary)
+                .font(OTheme.bodySmall)
+                .foregroundStyle(OTheme.primary)
                 .lineLimit(4)
 
             // Read Article button
@@ -83,12 +83,12 @@ struct WikipediaCardView: View {
                     }
                 } label: {
                     Label("Read Article", systemImage: "safari")
-                        .font(QTheme.label)
+                        .font(OTheme.label)
                 }
                 .buttonStyle(.glass)
             }
         }
         .padding(14)
-        .glassEffect(.regular.tint(QTheme.quarkNavy.opacity(0.1)), in: .rect(cornerRadius: QTheme.cornerRadiusCard))
+        .glassEffect(.regular.tint(OTheme.navy.opacity(0.1)), in: .rect(cornerRadius: OTheme.cornerRadiusCard))
     }
 }

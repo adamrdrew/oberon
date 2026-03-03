@@ -12,17 +12,17 @@ struct ActionButtonsView: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: action.icon)
-                            .font(QTheme.label)
+                            .font(OTheme.label)
                             .frame(width: 24)
 
                         VStack(alignment: .leading, spacing: 1) {
                             Text(action.label)
-                                .font(QTheme.label)
+                                .font(OTheme.label)
 
                             if !action.subtitle.isEmpty {
                                 Text(action.subtitle)
-                                    .font(QTheme.caption)
-                                    .foregroundStyle(QTheme.quarkSecondary)
+                                    .font(OTheme.caption)
+                                    .foregroundStyle(OTheme.secondary)
                                     .lineLimit(1)
                             }
                         }
@@ -30,8 +30,8 @@ struct ActionButtonsView: View {
                         Spacer()
 
                         Image(systemName: "chevron.right")
-                            .font(QTheme.caption)
-                            .foregroundStyle(QTheme.quarkTertiary)
+                            .font(OTheme.caption)
+                            .foregroundStyle(OTheme.tertiary)
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)

@@ -37,7 +37,7 @@ struct OnboardingView: View {
                 // Bottom nav bar
                 bottomBar
             }
-            .background(QTheme.quarkBackground)
+            .background(OTheme.background)
             .navigationTitle("Welcome")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -58,24 +58,24 @@ struct OnboardingView: View {
 
             Image(systemName: "atom")
                 .font(.system(size: 64))
-                .foregroundStyle(QTheme.quarkAccent)
+                .foregroundStyle(OTheme.accent)
 
             VStack(spacing: 12) {
-                Text("Welcome to\nQuarkChat")
-                    .font(QTheme.displayLarge)
-                    .foregroundStyle(QTheme.quarkPrimary)
+                Text("Welcome to\nOberon")
+                    .font(OTheme.displayLarge)
+                    .foregroundStyle(OTheme.primary)
                     .multilineTextAlignment(.center)
 
                 Text("Your local AI assistant")
-                    .font(QTheme.body)
-                    .foregroundStyle(QTheme.quarkSecondary)
+                    .font(OTheme.body)
+                    .foregroundStyle(OTheme.secondary)
 
                 VStack(spacing: 8) {
                     Label("AI runs entirely on your device", systemImage: "lock.shield")
                     Label("You are in control of your data", systemImage: "hand.raised")
                 }
-                .font(QTheme.bodySmall)
-                .foregroundStyle(QTheme.quarkTertiary)
+                .font(OTheme.bodySmall)
+                .foregroundStyle(OTheme.tertiary)
                 .padding(.top, 8)
             }
 
@@ -90,11 +90,11 @@ struct OnboardingView: View {
         VStack(spacing: 24) {
             VStack(spacing: 8) {
                 Text("About You")
-                    .font(QTheme.displayLarge)
-                    .foregroundStyle(QTheme.quarkPrimary)
-                Text("Help Quark get to know you.")
-                    .font(QTheme.bodySmall)
-                    .foregroundStyle(QTheme.quarkSecondary)
+                    .font(OTheme.displayLarge)
+                    .foregroundStyle(OTheme.primary)
+                Text("Help Oberon get to know you.")
+                    .font(OTheme.bodySmall)
+                    .foregroundStyle(OTheme.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -104,39 +104,39 @@ struct OnboardingView: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("About Me")
-                        .font(QTheme.caption)
-                        .foregroundStyle(QTheme.quarkSecondary)
+                        .font(OTheme.caption)
+                        .foregroundStyle(OTheme.secondary)
                         .textCase(.uppercase)
                         .tracking(1.5)
-                    TextField("Tell Quark about yourself...", text: $viewModel.aboutMe, axis: .vertical)
-                        .font(QTheme.body)
+                    TextField("Tell Oberon about yourself...", text: $viewModel.aboutMe, axis: .vertical)
+                        .font(OTheme.body)
                         .lineLimit(3...6)
                         .padding(12)
-                        .background(.ultraThinMaterial, in: .rect(cornerRadius: QTheme.cornerRadiusCard))
+                        .background(.ultraThinMaterial, in: .rect(cornerRadius: OTheme.cornerRadiusCard))
                     HStack {
                         Spacer()
                         Text("\(viewModel.aboutMeRemaining)")
-                            .font(QTheme.timestamp)
-                            .foregroundStyle(viewModel.aboutMeRemaining < 0 ? QTheme.quarkSignalRed : QTheme.quarkTertiary)
+                            .font(OTheme.timestamp)
+                            .foregroundStyle(viewModel.aboutMeRemaining < 0 ? OTheme.signalRed : OTheme.tertiary)
                     }
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Response Style")
-                        .font(QTheme.caption)
-                        .foregroundStyle(QTheme.quarkSecondary)
+                        .font(OTheme.caption)
+                        .foregroundStyle(OTheme.secondary)
                         .textCase(.uppercase)
                         .tracking(1.5)
-                    TextField("How should Quark respond?", text: $viewModel.responsePreference, axis: .vertical)
-                        .font(QTheme.body)
+                    TextField("How should Oberon respond?", text: $viewModel.responsePreference, axis: .vertical)
+                        .font(OTheme.body)
                         .lineLimit(3...6)
                         .padding(12)
-                        .background(.ultraThinMaterial, in: .rect(cornerRadius: QTheme.cornerRadiusCard))
+                        .background(.ultraThinMaterial, in: .rect(cornerRadius: OTheme.cornerRadiusCard))
                     HStack {
                         Spacer()
                         Text("\(viewModel.responsePrefRemaining)")
-                            .font(QTheme.timestamp)
-                            .foregroundStyle(viewModel.responsePrefRemaining < 0 ? QTheme.quarkSignalRed : QTheme.quarkTertiary)
+                            .font(OTheme.timestamp)
+                            .foregroundStyle(viewModel.responsePrefRemaining < 0 ? OTheme.signalRed : OTheme.tertiary)
                     }
                 }
             }
@@ -149,25 +149,25 @@ struct OnboardingView: View {
         VStack(spacing: 24) {
             VStack(spacing: 8) {
                 Text("Personalize")
-                    .font(QTheme.displayLarge)
-                    .foregroundStyle(QTheme.quarkPrimary)
+                    .font(OTheme.displayLarge)
+                    .foregroundStyle(OTheme.primary)
                 Text("Choose a theme that feels right.")
-                    .font(QTheme.bodySmall)
-                    .foregroundStyle(QTheme.quarkSecondary)
+                    .font(OTheme.bodySmall)
+                    .foregroundStyle(OTheme.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
             // Theme picker
             VStack(alignment: .leading, spacing: 12) {
                 Text("Theme")
-                    .font(QTheme.sectionHeader)
-                    .foregroundStyle(QTheme.quarkSecondary)
+                    .font(OTheme.sectionHeader)
+                    .foregroundStyle(OTheme.secondary)
                     .textCase(.uppercase)
                     .tracking(3)
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
-                        ForEach(QuarkColorTheme.allThemes) { theme in
+                        ForEach(ColorTheme.allThemes) { theme in
                             ThemePreviewCard(
                                 theme: theme,
                                 isSelected: viewModel.selectedThemeID == theme.id
@@ -186,28 +186,28 @@ struct OnboardingView: View {
             // Bubble color
             VStack(alignment: .leading, spacing: 12) {
                 Text("Bubble Color")
-                    .font(QTheme.sectionHeader)
-                    .foregroundStyle(QTheme.quarkSecondary)
+                    .font(OTheme.sectionHeader)
+                    .foregroundStyle(OTheme.secondary)
                     .textCase(.uppercase)
                     .tracking(3)
 
                 HStack(spacing: 12) {
-                    ForEach(QTheme.bubbleSwatches.indices, id: \.self) { index in
-                        let swatch = QTheme.bubbleSwatches[index]
+                    ForEach(OTheme.bubbleSwatches.indices, id: \.self) { index in
+                        let swatch = OTheme.bubbleSwatches[index]
                         Button {
                             viewModel.favoriteColorHex = swatch.hex
                         } label: {
-                            RoundedRectangle(cornerRadius: QTheme.cornerRadiusSmall)
+                            RoundedRectangle(cornerRadius: OTheme.cornerRadiusSmall)
                                 .fill(swatch.color)
                                 .frame(width: 40, height: 40)
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: QTheme.cornerRadiusSmall)
+                                    RoundedRectangle(cornerRadius: OTheme.cornerRadiusSmall)
                                         .strokeBorder(.primary.opacity(0.15), lineWidth: 1)
                                 )
                                 .overlay {
                                     if viewModel.favoriteColorHex == swatch.hex {
                                         Image(systemName: "checkmark")
-                                            .font(QTheme.caption.bold())
+                                            .font(OTheme.caption.bold())
                                             .foregroundStyle(.white)
                                     }
                                 }
@@ -229,15 +229,15 @@ struct OnboardingView: View {
 
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 64))
-                .foregroundStyle(QTheme.quarkAccent)
+                .foregroundStyle(OTheme.accent)
 
             VStack(spacing: 8) {
                 Text("You're All Set")
-                    .font(QTheme.displayLarge)
-                    .foregroundStyle(QTheme.quarkPrimary)
-                Text("Quark is ready to chat.")
-                    .font(QTheme.bodySmall)
-                    .foregroundStyle(QTheme.quarkSecondary)
+                    .font(OTheme.displayLarge)
+                    .foregroundStyle(OTheme.primary)
+                Text("Oberon is ready to chat.")
+                    .font(OTheme.bodySmall)
+                    .foregroundStyle(OTheme.secondary)
             }
 
             Spacer(minLength: 40)
@@ -257,8 +257,8 @@ struct OnboardingView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .font(QTheme.label)
-                .foregroundStyle(QTheme.quarkSecondary)
+                .font(OTheme.label)
+                .foregroundStyle(OTheme.secondary)
             } else {
                 Spacer()
                     .frame(width: 60)
@@ -270,7 +270,7 @@ struct OnboardingView: View {
             HStack(spacing: 8) {
                 ForEach(0..<totalPages, id: \.self) { index in
                     Circle()
-                        .fill(index == page ? QTheme.quarkAccent : QTheme.quarkTertiary.opacity(0.4))
+                        .fill(index == page ? OTheme.accent : OTheme.tertiary.opacity(0.4))
                         .frame(width: 8, height: 8)
                 }
             }
@@ -285,14 +285,14 @@ struct OnboardingView: View {
                     }
                 }
                 .buttonStyle(.glassProminent)
-                .font(QTheme.label)
+                .font(OTheme.label)
                 .disabled(page == 1 && viewModel.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             } else {
                 Button("Get Started") {
                     completeOnboarding()
                 }
                 .buttonStyle(.glassProminent)
-                .font(QTheme.label)
+                .font(OTheme.label)
             }
         }
         .padding(.horizontal, 24)
@@ -304,14 +304,14 @@ struct OnboardingView: View {
     private func onboardingField(_ label: String, text: Binding<String>, placeholder: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
-                .font(QTheme.caption)
-                .foregroundStyle(QTheme.quarkSecondary)
+                .font(OTheme.caption)
+                .foregroundStyle(OTheme.secondary)
                 .textCase(.uppercase)
                 .tracking(1.5)
             TextField(placeholder, text: text)
-                .font(QTheme.body)
+                .font(OTheme.body)
                 .padding(12)
-                .background(.ultraThinMaterial, in: .rect(cornerRadius: QTheme.cornerRadiusCard))
+                .background(.ultraThinMaterial, in: .rect(cornerRadius: OTheme.cornerRadiusCard))
         }
     }
 

@@ -86,7 +86,7 @@ actor WikipediaService {
 
     private func fetch<T: Decodable>(_ type: T.Type, from url: URL) async -> T? {
         var request = URLRequest(url: url)
-        request.setValue("QuarkChat/1.0 (iOS; quarkchat-app)", forHTTPHeaderField: "User-Agent")
+        request.setValue("Oberon/1.0 (iOS; oberon-app)", forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 8
 
         guard let (data, response) = try? await URLSession.shared.data(for: request),

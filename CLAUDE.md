@@ -1,8 +1,8 @@
-# QuarkChat — Development Guide
+# Oberon — Development Guide
 
 ## What Is This
 
-QuarkChat is an on-device, private AI chatbot using Apple Foundation Models (iOS/macOS/iPadOS 26+). Liquid Glass design. 2-pane layout. SwiftData + CloudKit sync.
+Oberon is an on-device, private AI chatbot using Apple Foundation Models (iOS/macOS/iPadOS 26+). Liquid Glass design. 2-pane layout. SwiftData + CloudKit sync.
 
 ## Before Writing Any Code
 

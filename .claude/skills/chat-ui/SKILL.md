@@ -2,7 +2,7 @@
 
 ## Design Language
 
-QuarkChat uses **Liquid Glass** throughout. All UI follows iOS/macOS 26+ idioms.
+Oberon uses **Liquid Glass** throughout. All UI follows iOS/macOS 26+ idioms.
 
 ### Layout Structure
 

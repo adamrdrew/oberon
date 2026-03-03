@@ -3,7 +3,7 @@ import MarkdownUI
 
 struct MessageBubble: View {
     let message: Message
-    var userColor: Color = QTheme.quarkNavy
+    var userColor: Color = OTheme.navy
     var onActionExecute: ((RichAction) -> Void)?
     var onSpeakToggle: ((Message) -> Void)?
     var onCopy: ((Message) -> Void)?
@@ -34,10 +34,10 @@ struct MessageBubble: View {
                 Group {
                     if isUser {
                         Text(message.content)
-                            .font(QTheme.body)
+                            .font(OTheme.body)
                     } else {
                         Markdown(message.content)
-                            .markdownTheme(.quarkChat)
+                            .markdownTheme(.oberon)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
@@ -45,7 +45,7 @@ struct MessageBubble: View {
                 .padding(.vertical, 10)
                 .glassEffect(
                     isUser ? .regular.tint(userColor) : .regular,
-                    in: .rect(cornerRadius: QTheme.cornerRadiusBubble)
+                    in: .rect(cornerRadius: OTheme.cornerRadiusBubble)
                 )
 
                 // Rich content cards
@@ -76,7 +76,7 @@ struct MessageBubble: View {
                             onSpeakToggle?(message)
                         } label: {
                             Image(systemName: isSpeaking ? "speaker.wave.2.fill" : "speaker.wave.2")
-                                .font(QTheme.caption)
+                                .font(OTheme.caption)
                                 .symbolEffect(.variableColor, isActive: isSpeaking)
                         }
                         .buttonStyle(.glass)
@@ -85,20 +85,20 @@ struct MessageBubble: View {
                             onCopy?(message)
                         } label: {
                             Image(systemName: "doc.on.doc")
-                                .font(QTheme.caption)
+                                .font(OTheme.caption)
                         }
                         .buttonStyle(.glass)
                     }
                 }
 
                 Text(message.createdAt, style: .time)
-                    .font(QTheme.timestamp)
-                    .foregroundStyle(QTheme.quarkTertiary)
+                    .font(OTheme.timestamp)
+                    .foregroundStyle(OTheme.tertiary)
                     .padding(.horizontal, 8)
             }
             .frame(maxWidth: isUser ? nil : .infinity, alignment: .leading)
         }
-        .padding(.horizontal, QTheme.contentPadding)
+        .padding(.horizontal, OTheme.contentPadding)
         .opacity(shouldAnimate ? (hasAppeared ? 1 : 0) : 1)
         .offset(x: shouldAnimate ? (hasAppeared ? 0 : (isUser ? 30 : -30)) : 0)
         .animation(

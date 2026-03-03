@@ -12,10 +12,10 @@ struct PipelineStatusView: View {
 
     private func categoryColor(_ category: StepCategory) -> Color {
         switch category {
-        case .webSearch: return QTheme.quarkTeal
-        case .calculation: return QTheme.quarkAccent
-        case .geoSearch: return QTheme.quarkNavy
-        case .weather: return QTheme.quarkTeal.opacity(0.7)
+        case .webSearch: return OTheme.teal
+        case .calculation: return OTheme.accent
+        case .geoSearch: return OTheme.navy
+        case .weather: return OTheme.teal.opacity(0.7)
         }
     }
 
@@ -30,9 +30,9 @@ struct PipelineStatusView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .glassEffect(
             .regular.tint(dominantColor.opacity(0.15)),
-            in: .rect(cornerRadius: QTheme.cornerRadiusCard)
+            in: .rect(cornerRadius: OTheme.cornerRadiusCard)
         )
-        .padding(.horizontal, isCompact ? 0 : QTheme.contentPadding)
+        .padding(.horizontal, isCompact ? 0 : OTheme.contentPadding)
     }
 
     @ViewBuilder
@@ -51,7 +51,7 @@ struct PipelineStatusView: View {
                 )
 
             Text(step.label)
-                .font(isCompact ? QTheme.pipelineLabelCompact : QTheme.pipelineLabel)
+                .font(isCompact ? OTheme.pipelineLabelCompact : OTheme.pipelineLabel)
                 .textCase(.uppercase)
                 .tracking(1.5)
                 .foregroundStyle(stepTextColor(step))
@@ -60,12 +60,12 @@ struct PipelineStatusView: View {
 
             if step.status == .completed {
                 Text("OK")
-                    .font(QTheme.timestamp)
+                    .font(OTheme.timestamp)
                     .foregroundStyle(categoryColor(step.category))
             } else if step.status == .failed {
                 Text("---")
-                    .font(QTheme.timestamp)
-                    .foregroundStyle(QTheme.quarkSecondary)
+                    .font(OTheme.timestamp)
+                    .foregroundStyle(OTheme.secondary)
             }
         }
         .onAppear { appearedStepIDs.insert(step.id) }
@@ -74,9 +74,9 @@ struct PipelineStatusView: View {
 
     private func stepTextColor(_ step: PipelineStep) -> Color {
         switch step.status {
-        case .active: return QTheme.quarkPrimary.opacity(0.8)
-        case .completed: return QTheme.quarkSecondary
-        case .failed: return QTheme.quarkSecondary
+        case .active: return OTheme.primary.opacity(0.8)
+        case .completed: return OTheme.secondary
+        case .failed: return OTheme.secondary
         }
     }
 }

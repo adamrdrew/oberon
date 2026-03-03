@@ -1,8 +1,8 @@
-# QuarkChat — Development Ideas
+# Oberon — Development Ideas
 
 ## Advantage Profile
 
-| Constraint | Traditional AI | QuarkChat |
+| Constraint | Traditional AI | Oberon |
 |---|---|---|
 | Cost per query | $$ | **Free** |
 | Parallel sessions | Expensive | **Unlimited** |

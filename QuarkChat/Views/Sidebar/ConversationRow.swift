@@ -6,22 +6,22 @@ struct ConversationRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(conversation.title)
-                .font(QTheme.conversationTitle)
+                .font(OTheme.conversationTitle)
                 .lineLimit(1)
 
             HStack {
                 if let lastMessage = conversation.sortedMessages.last {
                     Text(lastMessage.content)
-                        .font(QTheme.conversationPreview)
-                        .foregroundStyle(QTheme.quarkSecondary)
+                        .font(OTheme.conversationPreview)
+                        .foregroundStyle(OTheme.secondary)
                         .lineLimit(1)
                 }
 
                 Spacer()
 
                 Text(relativeTimestamp(for: conversation.updatedAt))
-                    .font(QTheme.timestamp)
-                    .foregroundStyle(QTheme.quarkTertiary)
+                    .font(OTheme.timestamp)
+                    .foregroundStyle(OTheme.tertiary)
                     .lineLimit(1)
             }
         }

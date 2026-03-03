@@ -1,8 +1,8 @@
 import SwiftUI
 
-// MARK: - QuarkColorTheme: Pure data defining all colors for one theme
+// MARK: - ColorTheme: Pure data defining all colors for one theme
 
-struct QuarkColorTheme: Identifiable, Equatable {
+struct ColorTheme: Identifiable, Equatable {
     let id: String
     let displayName: String
 
@@ -63,11 +63,11 @@ struct QuarkColorTheme: Identifiable, Equatable {
 
 // MARK: - Predefined Themes
 
-extension QuarkColorTheme {
+extension ColorTheme {
 
     /// Current default — warm retro-future
-    static let quark = QuarkColorTheme(
-        id: "quark", displayName: "Quark",
+    static let oberon = ColorTheme(
+        id: "oberon", displayName: "Oberon",
         band1Hex: "#D4582A", band2Hex: "#2A8A8A", band3Hex: "#1E2D4D",
         band4Hex: "#C23B22", band5Hex: "#F5F2EB",
         backgroundLight: "#F5F2EB", backgroundDark: "#1A1721",
@@ -83,8 +83,8 @@ extension QuarkColorTheme {
     )
 
     /// Cool neon on dark
-    static let muon = QuarkColorTheme(
-        id: "muon", displayName: "Muon",
+    static let titania = ColorTheme(
+        id: "titania", displayName: "Titania",
         band1Hex: "#00D4FF", band2Hex: "#D946EF", band3Hex: "#64748B",
         band4Hex: "#8B5CF6", band5Hex: "#E0F2FE",
         backgroundLight: "#F0F4F8", backgroundDark: "#0F1219",
@@ -100,8 +100,8 @@ extension QuarkColorTheme {
     )
 
     /// 70s warm sunset
-    static let tau = QuarkColorTheme(
-        id: "tau", displayName: "Tau",
+    static let ariel = ColorTheme(
+        id: "ariel", displayName: "Ariel",
         band1Hex: "#D97706", band2Hex: "#B45309", band3Hex: "#CA8A04",
         band4Hex: "#7F1D1D", band5Hex: "#A0522D",
         backgroundLight: "#FEF3C7", backgroundDark: "#1C1208",
@@ -117,8 +117,8 @@ extension QuarkColorTheme {
     )
 
     /// Earth & terracotta
-    static let pion = QuarkColorTheme(
-        id: "pion", displayName: "Pion",
+    static let miranda = ColorTheme(
+        id: "miranda", displayName: "Miranda",
         band1Hex: "#C2703E", band2Hex: "#5F8575", band3Hex: "#A93226",
         band4Hex: "#C8A951", band5Hex: "#D2C6A5",
         backgroundLight: "#F5F0E8", backgroundDark: "#1A1712",
@@ -134,8 +134,8 @@ extension QuarkColorTheme {
     )
 
     /// Ocean depths
-    static let gluon = QuarkColorTheme(
-        id: "gluon", displayName: "Gluon",
+    static let puck = ColorTheme(
+        id: "puck", displayName: "Puck",
         band1Hex: "#0D7377", band2Hex: "#E76F51", band3Hex: "#14213D",
         band4Hex: "#52B788", band5Hex: "#F0EFEB",
         backgroundLight: "#EFF6F5", backgroundDark: "#0A1218",
@@ -151,8 +151,8 @@ extension QuarkColorTheme {
     )
 
     /// Apple rainbow retro
-    static let kaon = QuarkColorTheme(
-        id: "kaon", displayName: "Kaon",
+    static let umbriel = ColorTheme(
+        id: "umbriel", displayName: "Umbriel",
         band1Hex: "#5AC94B", band2Hex: "#F57C20", band3Hex: "#E03C31",
         band4Hex: "#8B5CC0", band5Hex: "#2D7DD2",
         backgroundLight: "#F5F3F0", backgroundDark: "#18161E",
@@ -169,11 +169,23 @@ extension QuarkColorTheme {
 
     // MARK: - All Themes
 
-    static let allThemes: [QuarkColorTheme] = [
-        .quark, .muon, .tau, .pion, .gluon, .kaon,
+    static let allThemes: [ColorTheme] = [
+        .oberon, .titania, .ariel, .miranda, .puck, .umbriel,
     ]
 
-    static func theme(for id: String) -> QuarkColorTheme {
-        allThemes.first(where: { $0.id == id }) ?? .quark
+    // MARK: - Old ID Migration (particle → moon)
+
+    private static let legacyIDMap: [String: String] = [
+        "quark": "oberon",
+        "muon": "titania",
+        "tau": "ariel",
+        "pion": "miranda",
+        "gluon": "puck",
+        "kaon": "umbriel",
+    ]
+
+    static func theme(for id: String) -> ColorTheme {
+        let resolvedID = legacyIDMap[id] ?? id
+        return allThemes.first(where: { $0.id == resolvedID }) ?? .oberon
     }
 }

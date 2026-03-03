@@ -17,7 +17,7 @@ struct MessageInputBar: View {
     var body: some View {
         HStack(spacing: 10) {
             TextField("Message", text: $text, axis: .vertical)
-                .font(QTheme.body)
+                .font(OTheme.body)
                 .lineLimit(1...5)
                 .focused($isFocused)
                 .disabled(isGenerating)
@@ -40,7 +40,7 @@ struct MessageInputBar: View {
                 } label: {
                     Image(systemName: "stop.fill")
                         .font(.system(size: 22, design: .monospaced))
-                        .foregroundStyle(QTheme.quarkSignalRed)
+                        .foregroundStyle(OTheme.signalRed)
                         .contentTransition(.symbolEffect(.replace))
                 }
                 .padding(.trailing, 8)
@@ -59,7 +59,7 @@ struct MessageInputBar: View {
                     ZStack {
                         if speechService.isRecording {
                             Circle()
-                                .fill(QTheme.quarkSignalRed.opacity(0.2))
+                                .fill(OTheme.signalRed.opacity(0.2))
                                 .frame(width: 36, height: 36)
                                 .scaleEffect(1 + CGFloat(speechService.audioLevel) * 0.5)
                                 .animation(.easeOut(duration: 0.1), value: speechService.audioLevel)
@@ -67,7 +67,7 @@ struct MessageInputBar: View {
 
                         Image(systemName: speechService.isRecording ? "mic.fill" : "mic")
                             .font(.system(size: 22, design: .monospaced))
-                            .foregroundStyle(speechService.isRecording ? QTheme.quarkSignalRed : .primary)
+                            .foregroundStyle(speechService.isRecording ? OTheme.signalRed : .primary)
                             .symbolEffect(.variableColor, isActive: speechService.isRecording)
                     }
                 }
@@ -82,7 +82,7 @@ struct MessageInputBar: View {
                 } label: {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.system(size: 22, design: .monospaced))
-                        .foregroundStyle(QTheme.quarkAccent)
+                        .foregroundStyle(OTheme.accent)
                         .contentTransition(.symbolEffect(.replace))
                 }
                 .disabled(isEmpty)
@@ -90,8 +90,8 @@ struct MessageInputBar: View {
             }
         }
         .padding(.vertical, 4)
-        .glassEffect(in: .rect(cornerRadius: QTheme.cornerRadiusInput))
-        .padding(.horizontal, QTheme.contentPadding)
+        .glassEffect(in: .rect(cornerRadius: OTheme.cornerRadiusInput))
+        .padding(.horizontal, OTheme.contentPadding)
         .padding(.bottom, 8)
         #if os(macOS)
         .onChange(of: isGenerating) { wasGenerating, nowGenerating in
@@ -104,11 +104,11 @@ struct MessageInputBar: View {
         .overlay(alignment: .top) {
             if let speechService, speechService.isRecording, !speechService.transcribedText.isEmpty {
                 Text(speechService.transcribedText)
-                    .font(QTheme.timestamp)
-                    .foregroundStyle(QTheme.quarkSecondary)
+                    .font(OTheme.timestamp)
+                    .foregroundStyle(OTheme.secondary)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 4)
-                    .glassEffect(in: .rect(cornerRadius: QTheme.cornerRadiusSmall))
+                    .glassEffect(in: .rect(cornerRadius: OTheme.cornerRadiusSmall))
                     .offset(y: -36)
                     .transition(.opacity)
             }

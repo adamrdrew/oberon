@@ -8,7 +8,7 @@ struct SettingsView: View {
 
     @State private var viewModel = SettingsViewModel()
     @State private var profile: UserProfile?
-    @State private var originalThemeID: String = "quark"
+    @State private var originalThemeID: String = "oberon"
     @State private var showDeleteConfirmation = false
 
     var body: some View {
@@ -21,7 +21,7 @@ struct SettingsView: View {
                     settingsSection("Theme") {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 12) {
-                                ForEach(QuarkColorTheme.allThemes) { theme in
+                                ForEach(ColorTheme.allThemes) { theme in
                                     ThemePreviewCard(
                                         theme: theme,
                                         isSelected: viewModel.selectedThemeID == theme.id
@@ -48,20 +48,20 @@ struct SettingsView: View {
 
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("About Me")
-                                    .font(QTheme.caption)
-                                    .foregroundStyle(QTheme.quarkSecondary)
+                                    .font(OTheme.caption)
+                                    .foregroundStyle(OTheme.secondary)
                                     .textCase(.uppercase)
                                     .tracking(1.5)
-                                TextField("Tell Quark about yourself...", text: $viewModel.aboutMe, axis: .vertical)
-                                    .font(QTheme.body)
+                                TextField("Tell Oberon about yourself...", text: $viewModel.aboutMe, axis: .vertical)
+                                    .font(OTheme.body)
                                     .lineLimit(3...6)
                                     .padding(12)
-                                    .background(.ultraThinMaterial, in: .rect(cornerRadius: QTheme.cornerRadiusCard))
+                                    .background(.ultraThinMaterial, in: .rect(cornerRadius: OTheme.cornerRadiusCard))
                                 HStack {
                                     Spacer()
                                     Text("\(viewModel.aboutMeRemaining)")
-                                        .font(QTheme.timestamp)
-                                        .foregroundStyle(viewModel.aboutMeRemaining < 0 ? QTheme.quarkSignalRed : QTheme.quarkTertiary)
+                                        .font(OTheme.timestamp)
+                                        .foregroundStyle(viewModel.aboutMeRemaining < 0 ? OTheme.signalRed : OTheme.tertiary)
                                 }
                             }
                         }
@@ -71,16 +71,16 @@ struct SettingsView: View {
 
                     settingsSection("Response Style") {
                         VStack(alignment: .leading, spacing: 6) {
-                            TextField("How should Quark respond?", text: $viewModel.responsePreference, axis: .vertical)
-                                .font(QTheme.body)
+                            TextField("How should Oberon respond?", text: $viewModel.responsePreference, axis: .vertical)
+                                .font(OTheme.body)
                                 .lineLimit(3...6)
                                 .padding(12)
-                                .background(.ultraThinMaterial, in: .rect(cornerRadius: QTheme.cornerRadiusCard))
+                                .background(.ultraThinMaterial, in: .rect(cornerRadius: OTheme.cornerRadiusCard))
                             HStack {
                                 Spacer()
                                 Text("\(viewModel.responsePrefRemaining)")
-                                    .font(QTheme.timestamp)
-                                    .foregroundStyle(viewModel.responsePrefRemaining < 0 ? QTheme.quarkSignalRed : QTheme.quarkTertiary)
+                                    .font(OTheme.timestamp)
+                                    .foregroundStyle(viewModel.responsePrefRemaining < 0 ? OTheme.signalRed : OTheme.tertiary)
                             }
                         }
                     }
@@ -89,22 +89,22 @@ struct SettingsView: View {
 
                     settingsSection("Bubble Color") {
                         HStack(spacing: 12) {
-                            ForEach(QTheme.bubbleSwatches.indices, id: \.self) { index in
-                                let swatch = QTheme.bubbleSwatches[index]
+                            ForEach(OTheme.bubbleSwatches.indices, id: \.self) { index in
+                                let swatch = OTheme.bubbleSwatches[index]
                                 Button {
                                     viewModel.favoriteColorHex = swatch.hex
                                 } label: {
-                                    RoundedRectangle(cornerRadius: QTheme.cornerRadiusSmall)
+                                    RoundedRectangle(cornerRadius: OTheme.cornerRadiusSmall)
                                         .fill(swatch.color)
                                         .frame(width: 40, height: 40)
                                         .overlay(
-                                            RoundedRectangle(cornerRadius: QTheme.cornerRadiusSmall)
+                                            RoundedRectangle(cornerRadius: OTheme.cornerRadiusSmall)
                                                 .strokeBorder(.primary.opacity(0.15), lineWidth: 1)
                                         )
                                         .overlay {
                                             if viewModel.favoriteColorHex == swatch.hex {
                                                 Image(systemName: "checkmark")
-                                                    .font(QTheme.caption.bold())
+                                                    .font(OTheme.caption.bold())
                                                     .foregroundStyle(.white)
                                             }
                                         }
@@ -126,12 +126,12 @@ struct SettingsView: View {
                                 Image(systemName: "trash")
                                     .font(.system(size: 15))
                                 Text("Delete All Data")
-                                    .font(QTheme.label)
+                                    .font(OTheme.label)
                             }
-                            .foregroundStyle(QTheme.quarkSignalRed)
+                            .foregroundStyle(OTheme.signalRed)
                             .padding(12)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(.ultraThinMaterial, in: .rect(cornerRadius: QTheme.cornerRadiusCard))
+                            .background(.ultraThinMaterial, in: .rect(cornerRadius: OTheme.cornerRadiusCard))
                         }
                         .buttonStyle(.plain)
                     }
@@ -141,7 +141,7 @@ struct SettingsView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
             }
-            .background(QTheme.quarkBackground)
+            .background(OTheme.background)
             .navigationTitle("Settings")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -183,8 +183,8 @@ struct SettingsView: View {
     private func settingsSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(title)
-                .font(QTheme.sectionHeader)
-                .foregroundStyle(QTheme.quarkSecondary)
+                .font(OTheme.sectionHeader)
+                .foregroundStyle(OTheme.secondary)
                 .textCase(.uppercase)
                 .tracking(3)
             content()
@@ -196,14 +196,14 @@ struct SettingsView: View {
     private func settingsField(_ placeholder: String, text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(placeholder)
-                .font(QTheme.caption)
-                .foregroundStyle(QTheme.quarkSecondary)
+                .font(OTheme.caption)
+                .foregroundStyle(OTheme.secondary)
                 .textCase(.uppercase)
                 .tracking(1.5)
             TextField(placeholder, text: text)
-                .font(QTheme.body)
+                .font(OTheme.body)
                 .padding(12)
-                .background(.ultraThinMaterial, in: .rect(cornerRadius: QTheme.cornerRadiusCard))
+                .background(.ultraThinMaterial, in: .rect(cornerRadius: OTheme.cornerRadiusCard))
         }
     }
 
@@ -233,14 +233,14 @@ struct SettingsView: View {
             profile.aboutMe = ""
             profile.responsePreference = ""
             profile.favoriteColorHex = "#1E2D4D"
-            profile.themeID = "quark"
+            profile.themeID = "oberon"
             profile.hasCompletedOnboarding = false
         }
 
         try? modelContext.save()
 
         // Reset theme to default
-        ThemeManager.shared.applyTheme(id: "quark")
+        ThemeManager.shared.applyTheme(id: "oberon")
 
         // Clear selected conversation and trigger onboarding
         appState.selectedConversation = nil
@@ -252,7 +252,7 @@ struct SettingsView: View {
 // MARK: - Theme Preview Card
 
 struct ThemePreviewCard: View {
-    let theme: QuarkColorTheme
+    let theme: ColorTheme
     let isSelected: Bool
     let action: () -> Void
 
@@ -266,23 +266,23 @@ struct ThemePreviewCard: View {
                             .frame(height: 6)
                     }
                 }
-                .clipShape(.rect(cornerRadius: QTheme.cornerRadiusSmall))
+                .clipShape(.rect(cornerRadius: OTheme.cornerRadiusSmall))
                 .frame(width: 72)
 
                 Text(theme.displayName)
-                    .font(QTheme.pipelineLabel)
+                    .font(OTheme.pipelineLabel)
                     .textCase(.uppercase)
                     .tracking(1.5)
-                    .foregroundStyle(isSelected ? QTheme.quarkAccent : QTheme.quarkSecondary)
+                    .foregroundStyle(isSelected ? OTheme.accent : OTheme.secondary)
             }
             .padding(10)
             .background {
-                RoundedRectangle(cornerRadius: QTheme.cornerRadiusCard)
+                RoundedRectangle(cornerRadius: OTheme.cornerRadiusCard)
                     .fill(.ultraThinMaterial)
                     .overlay(
-                        RoundedRectangle(cornerRadius: QTheme.cornerRadiusCard)
+                        RoundedRectangle(cornerRadius: OTheme.cornerRadiusCard)
                             .strokeBorder(
-                                isSelected ? QTheme.quarkAccent : .clear,
+                                isSelected ? OTheme.accent : .clear,
                                 lineWidth: 2
                             )
                     )

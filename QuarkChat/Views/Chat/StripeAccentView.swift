@@ -5,7 +5,7 @@ import SwiftUI
 struct StripeAccentView: View {
     var bandHeight: CGFloat = 4
     var spacing: CGFloat = 2
-    var colors: [Color] = QTheme.defaultStripeColors
+    var colors: [Color] = OTheme.defaultStripeColors
 
     var body: some View {
         VStack(spacing: spacing) {

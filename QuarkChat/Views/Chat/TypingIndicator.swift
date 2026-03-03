@@ -11,18 +11,18 @@ struct TypingIndicator: View {
                 HStack(spacing: 4) {
                     ForEach(0..<3, id: \.self) { index in
                         Circle()
-                            .fill(QTheme.quarkTeal)
+                            .fill(OTheme.teal)
                             .frame(width: 8, height: 8)
                             .offset(y: reduceMotion ? 0 : sin(phase + Double(index) * 0.4) * 4)
                     }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .glassEffect(in: .rect(cornerRadius: QTheme.cornerRadiusBubble))
+                .glassEffect(in: .rect(cornerRadius: OTheme.cornerRadiusBubble))
 
                 Spacer()
             }
-            .padding(.horizontal, QTheme.contentPadding)
+            .padding(.horizontal, OTheme.contentPadding)
         }
     }
 }

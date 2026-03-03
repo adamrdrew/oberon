@@ -1,24 +1,24 @@
 import SwiftUI
 import MarkdownUI
 
-// MARK: - QTheme: Single source of truth for QuarkChat visual identity
+// MARK: - OTheme: Single source of truth for Oberon visual identity
 
-enum QTheme {
+enum OTheme {
 
-    @MainActor private static var theme: QuarkColorTheme { ThemeManager.shared.currentTheme }
+    @MainActor private static var theme: ColorTheme { ThemeManager.shared.currentTheme }
 
     // MARK: - Adaptive Colors (computed from active theme)
 
-    @MainActor static var quarkBackground: Color { theme.background }
-    @MainActor static var quarkSurface: Color    { theme.surface }
-    @MainActor static var quarkPrimary: Color    { theme.primary }
-    @MainActor static var quarkSecondary: Color  { theme.secondary }
-    @MainActor static var quarkTertiary: Color   { theme.tertiary }
-    @MainActor static var quarkAccent: Color     { theme.accent }
-    @MainActor static var quarkTeal: Color       { theme.teal }
-    @MainActor static var quarkNavy: Color       { theme.navy }
-    @MainActor static var quarkSignalRed: Color  { theme.signalRed }
-    @MainActor static var quarkCream: Color      { theme.cream }
+    @MainActor static var background: Color { theme.background }
+    @MainActor static var surface: Color    { theme.surface }
+    @MainActor static var primary: Color    { theme.primary }
+    @MainActor static var secondary: Color  { theme.secondary }
+    @MainActor static var tertiary: Color   { theme.tertiary }
+    @MainActor static var accent: Color     { theme.accent }
+    @MainActor static var teal: Color       { theme.teal }
+    @MainActor static var navy: Color       { theme.navy }
+    @MainActor static var signalRed: Color  { theme.signalRed }
+    @MainActor static var cream: Color      { theme.cream }
 
     // MARK: - Fixed Stripe Colors (computed from active theme band colors)
 
@@ -132,7 +132,7 @@ extension Color {
 // MARK: - MarkdownUI Theme
 
 extension Theme {
-    @MainActor static var quarkChat: Theme { Theme()
+    @MainActor static var oberon: Theme { Theme()
         .text {
             FontFamilyVariant(.monospaced)
             FontSize(14)
@@ -145,7 +145,7 @@ extension Theme {
             FontWeight(.semibold)
         }
         .link {
-            ForegroundColor(QTheme.quarkTeal)
+            ForegroundColor(OTheme.teal)
         }
         .codeBlock { configuration in
             ScrollView(.horizontal, showsIndicators: false) {
@@ -153,7 +153,7 @@ extension Theme {
                     .font(.system(.callout, design: .monospaced))
                     .padding(12)
             }
-            .background(QTheme.quarkSurface, in: .rect(cornerRadius: QTheme.cornerRadiusSmall))
+            .background(OTheme.surface, in: .rect(cornerRadius: OTheme.cornerRadiusSmall))
             .markdownMargin(top: 8, bottom: 8)
         }
         .paragraph { configuration in

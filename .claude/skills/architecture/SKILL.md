@@ -1,15 +1,15 @@
-# QuarkChat Architecture
+# Oberon Architecture
 
 ## App Structure
 
-QuarkChat uses **MVVM with @Observable** pattern. All view models are `@Observable` classes. Views are thin — logic lives in view models and services.
+Oberon uses **MVVM with @Observable** pattern. All view models are `@Observable` classes. Views are thin — logic lives in view models and services.
 
 ### File Organization
 
 ```
 QuarkChat/
 ├── App/
-│   ├── QuarkChatApp.swift          # @main, ModelContainer setup
+│   ├── OberonApp.swift             # @main, ModelContainer setup
 │   └── AppState.swift              # Global app state (@Observable)
 ├── Models/                         # SwiftData @Model classes
 │   ├── Conversation.swift

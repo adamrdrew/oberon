@@ -6,12 +6,12 @@ import Observation
 final class ThemeManager {
     static let shared = ThemeManager()
 
-    var currentTheme: QuarkColorTheme = .quark
+    var currentTheme: ColorTheme = .oberon
     @ObservationIgnored var hasLoadedInitialTheme = false
 
     private init() {}
 
     func applyTheme(id: String) {
-        currentTheme = QuarkColorTheme.theme(for: id)
+        currentTheme = ColorTheme.theme(for: id)
     }
 }

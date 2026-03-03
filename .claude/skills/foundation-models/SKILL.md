@@ -31,7 +31,7 @@ Instructions are the MOST reliable way to steer behavior. Keep them concise (1-3
 ```swift
 let instructions = Instructions {
     """
-    You are QuarkChat, a helpful AI assistant running on-device. \
+    You are Oberon, a helpful AI assistant running on-device. \
     You are honest about your limitations. When you don't know something, \
     use the web_search tool to find current information. \
     Keep responses concise and helpful.

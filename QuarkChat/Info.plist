@@ -7,8 +7,8 @@
 		<string>remote-notification</string>
 	</array>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>QuarkChat uses speech recognition for voice input.</string>
+	<string>Oberon uses speech recognition for voice input.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>QuarkChat uses the microphone for voice input.</string>
+	<string>Oberon uses the microphone for voice input.</string>
 </dict>
 </plist>

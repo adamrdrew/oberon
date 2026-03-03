@@ -7,18 +7,18 @@ struct ErrorMessageView: View {
         HStack(spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .symbolEffect(.pulse)
-                .foregroundStyle(QTheme.quarkSignalRed)
+                .foregroundStyle(OTheme.signalRed)
 
             Text(message)
-                .font(QTheme.errorBody)
-                .foregroundStyle(QTheme.quarkSecondary)
+                .font(OTheme.errorBody)
+                .foregroundStyle(OTheme.secondary)
 
             Spacer()
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .glassEffect(.regular.tint(QTheme.quarkSignalRed), in: .rect(cornerRadius: QTheme.cornerRadiusBubble))
-        .padding(.horizontal, QTheme.contentPadding)
+        .glassEffect(.regular.tint(OTheme.signalRed), in: .rect(cornerRadius: OTheme.cornerRadiusBubble))
+        .padding(.horizontal, OTheme.contentPadding)
         .transition(.blurReplace)
     }
 }

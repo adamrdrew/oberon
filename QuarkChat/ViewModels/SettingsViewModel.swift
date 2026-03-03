@@ -10,7 +10,7 @@ final class SettingsViewModel {
     var aboutMe: String = ""
     var responsePreference: String = ""
     var favoriteColorHex: String = "#1E2D4D"
-    var selectedThemeID: String = "quark"
+    var selectedThemeID: String = "oberon"
 
     private var profile: UserProfile?
 

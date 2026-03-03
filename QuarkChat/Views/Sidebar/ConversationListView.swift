@@ -88,9 +88,9 @@ struct ConversationListView: View {
             #if os(iOS)
             // App branding
             HStack {
-                Text("QuarkChat")
+                Text("Oberon")
                     .font(.system(size: 24, weight: .bold, design: .monospaced))
-                    .foregroundStyle(QTheme.quarkPrimary)
+                    .foregroundStyle(OTheme.primary)
                 Spacer()
             }
             .padding(.horizontal, 16)
@@ -116,7 +116,7 @@ struct ConversationListView: View {
                             .font(.system(size: 15))
                             .frame(width: 20)
                         Text("New Chat")
-                            .font(QTheme.label)
+                            .font(OTheme.label)
                         Spacer()
                     }
                     .padding(.horizontal, 16)
@@ -141,7 +141,7 @@ struct ConversationListView: View {
                             .font(.system(size: 15))
                             .frame(width: 20)
                         Text(isEditing ? "Done" : "Edit")
-                            .font(QTheme.label)
+                            .font(OTheme.label)
                         Spacer()
                     }
                     .padding(.horizontal, 16)
@@ -161,7 +161,7 @@ struct ConversationListView: View {
                                 .font(.system(size: 15))
                                 .frame(width: 20)
                             Text("Delete (\(multiSelection.count))")
-                                .font(QTheme.label)
+                                .font(OTheme.label)
                             Spacer()
                         }
                         .padding(.horizontal, 16)
@@ -169,7 +169,7 @@ struct ConversationListView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .foregroundStyle(multiSelection.isEmpty ? QTheme.quarkTertiary : QTheme.quarkSignalRed)
+                    .foregroundStyle(multiSelection.isEmpty ? OTheme.tertiary : OTheme.signalRed)
                     .disabled(multiSelection.isEmpty)
                 }
             }
@@ -192,7 +192,7 @@ struct ConversationListView: View {
                 HStack(spacing: 12) {
                     ZStack {
                         Circle()
-                            .fill(QTheme.quarkAccent)
+                            .fill(OTheme.accent)
                             .frame(width: 30, height: 30)
                         Text(userInitial)
                             .font(.system(size: 13, weight: .semibold, design: .monospaced))
@@ -200,8 +200,8 @@ struct ConversationListView: View {
                     }
 
                     Text(userName)
-                        .font(QTheme.label)
-                        .foregroundStyle(QTheme.quarkPrimary)
+                        .font(OTheme.label)
+                        .foregroundStyle(OTheme.primary)
 
                     Spacer()
                 }
@@ -226,7 +226,7 @@ struct ConversationListView: View {
                     Label("No Conversations", systemImage: "bubble.left.and.bubble.right")
                 } description: {
                     Text("Start a new chat to begin.")
-                        .font(QTheme.bodySmall)
+                        .font(OTheme.bodySmall)
                 }
             } else {
                 Section {
@@ -275,7 +275,7 @@ struct ConversationListView: View {
                     Label("No Conversations", systemImage: "bubble.left.and.bubble.right")
                 } description: {
                     Text("Start a new chat to begin.")
-                        .font(QTheme.bodySmall)
+                        .font(OTheme.bodySmall)
                 }
             } else {
                 ForEach(filteredConversations) { conversation in

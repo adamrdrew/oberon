@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct QuarkChatApp: App {
+struct OberonApp: App {
     @State private var appState = AppState()
     @State private var themeManager = ThemeManager.shared
 

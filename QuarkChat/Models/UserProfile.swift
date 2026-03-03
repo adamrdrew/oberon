@@ -10,7 +10,7 @@ class UserProfile {
     var aboutMe: String = ""
     var responsePreference: String = ""
     var favoriteColorHex: String = "#1E2D4D"
-    var themeID: String = "quark"
+    var themeID: String = "oberon"
     var hasCompletedOnboarding: Bool = false
 
     var favoriteColor: Color {

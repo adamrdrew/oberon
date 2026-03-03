@@ -16,13 +16,13 @@ struct CitationLinksView: View {
                 } label: {
                     Label {
                         Text(displayHost(citation.url))
-                            .font(QTheme.citation)
+                            .font(OTheme.citation)
                             .lineLimit(1)
                     } icon: {
                         Image(systemName: "link")
-                            .font(QTheme.citation)
+                            .font(OTheme.citation)
                     }
-                    .foregroundStyle(QTheme.quarkTeal)
+                    .foregroundStyle(OTheme.teal)
                 }
                 .buttonStyle(.plain)
             }
