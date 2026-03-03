@@ -56,9 +56,10 @@ struct OnboardingView: View {
         VStack(spacing: 24) {
             Spacer(minLength: 40)
 
-            Image(systemName: "atom")
+            Image(systemName: "moon.haze.circle.fill")
                 .font(.system(size: 64))
-                .foregroundStyle(OTheme.accent)
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(OTheme.accent, OTheme.teal, OTheme.navy)
 
             VStack(spacing: 12) {
                 Text("Welcome to\nOberon")
