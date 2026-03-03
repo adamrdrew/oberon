@@ -26,6 +26,7 @@ struct SettingsView: View {
                                         theme: theme,
                                         isSelected: viewModel.selectedThemeID == theme.id
                                     ) {
+                                        Haptics.selection()
                                         viewModel.selectedThemeID = theme.id
                                         // Update bubble color to match new theme's first band
                                         viewModel.favoriteColorHex = theme.band3Hex
@@ -92,6 +93,7 @@ struct SettingsView: View {
                             ForEach(OTheme.bubbleSwatches.indices, id: \.self) { index in
                                 let swatch = OTheme.bubbleSwatches[index]
                                 Button {
+                                    Haptics.selection()
                                     viewModel.favoriteColorHex = swatch.hex
                                 } label: {
                                     RoundedRectangle(cornerRadius: OTheme.cornerRadiusSmall)

@@ -220,6 +220,7 @@ final class ChatViewModel {
 
         // Clear live pipeline steps now that they're persisted
         livePipelineSteps = []
+        Haptics.landed()
 
         // Auto-execute primary action after message is persisted
         if let primaryAction = toolResults.actions.first, primaryAction.autoExecutes {

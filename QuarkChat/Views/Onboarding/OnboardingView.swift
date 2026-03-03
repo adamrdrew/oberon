@@ -172,6 +172,7 @@ struct OnboardingView: View {
                                 theme: theme,
                                 isSelected: viewModel.selectedThemeID == theme.id
                             ) {
+                                Haptics.selection()
                                 viewModel.selectedThemeID = theme.id
                                 viewModel.favoriteColorHex = theme.band3Hex
                                 ThemeManager.shared.applyTheme(id: theme.id)
@@ -195,6 +196,7 @@ struct OnboardingView: View {
                     ForEach(OTheme.bubbleSwatches.indices, id: \.self) { index in
                         let swatch = OTheme.bubbleSwatches[index]
                         Button {
+                            Haptics.selection()
                             viewModel.favoriteColorHex = swatch.hex
                         } label: {
                             RoundedRectangle(cornerRadius: OTheme.cornerRadiusSmall)

@@ -26,6 +26,7 @@ struct MessageInputBar: View {
                 .padding(.vertical, 10)
                 .onSubmit {
                     if !isGenerating && !isEmpty {
+                        Haptics.tap()
                         onSend()
                         #if os(iOS)
                         isFocused = false
@@ -75,6 +76,7 @@ struct MessageInputBar: View {
             } else {
                 // Send button
                 Button {
+                    Haptics.tap()
                     onSend()
                     #if os(iOS)
                     isFocused = false
