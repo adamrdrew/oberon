@@ -6,14 +6,6 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
-	<key>NSRemindersUsageDescription</key>
-	<string>QuarkChat creates reminders and checklists when you ask.</string>
-	<key>NSCalendarsUsageDescription</key>
-	<string>QuarkChat can check your calendar for scheduling.</string>
-	<key>NSContactsUsageDescription</key>
-	<string>QuarkChat looks up contacts when you ask about people.</string>
-	<key>NSAppleMusicUsageDescription</key>
-	<string>QuarkChat plays music when you ask.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>QuarkChat uses speech recognition for voice input.</string>
 	<key>NSMicrophoneUsageDescription</key>
