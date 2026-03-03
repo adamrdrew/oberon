@@ -38,20 +38,20 @@ struct ConversationListView: View {
     }
 
     var body: some View {
-        Group {
-            if isEditing {
-                editModeList
-            } else {
-                navigationList
-            }
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
+        VStack(spacing: 0) {
             sidebarHeader
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+
+            Group {
+                if isEditing {
+                    editModeList
+                } else {
+                    navigationList
+                }
+            }
+            .searchable(text: $searchText, prompt: "Search conversations")
+
             sidebarFooter
         }
-        .searchable(text: $searchText, prompt: "Search conversations")
         .alert("Delete Conversations", isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
             Button("Delete \(multiSelection.count) Conversation\(multiSelection.count == 1 ? "" : "s")", role: .destructive) {
