@@ -25,6 +25,9 @@ struct ChatView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: isEmptyState)
+        .onDisappear {
+            viewModel.disableVoiceMode()
+        }
         .navigationTitle(conversation.title)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -246,6 +249,11 @@ struct ChatView: View {
             onVoiceSend: { transcribed in
                 viewModel.inputText = transcribed
                 Task { await viewModel.sendMessage() }
+            },
+            isVoiceMode: viewModel.isVoiceMode,
+            voiceModeStatus: viewModel.voiceModeStatus,
+            onToggleVoiceMode: {
+                viewModel.toggleVoiceMode()
             }
         )
     }

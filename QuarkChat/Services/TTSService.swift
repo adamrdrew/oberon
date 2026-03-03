@@ -8,6 +8,9 @@ final class TTSService: NSObject {
     var isSpeaking: Bool = false
     var currentMessageID: UUID?
 
+    /// Called when TTS finishes speaking naturally (not on cancel).
+    var onFinishedSpeaking: (() -> Void)?
+
     private let synthesizer = AVSpeechSynthesizer()
 
     override init() {
@@ -25,16 +28,30 @@ final class TTSService: NSObject {
 
         // Strip markdown formatting for cleaner speech
         let cleanText = stripMarkdown(text)
+        guard !cleanText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+
+        // Configure audio session for playback
+        #if os(iOS)
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, mode: .default)
+        try? session.setActive(true)
+        #endif
 
         let utterance = AVSpeechUtterance(string: cleanText)
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate
         utterance.pitchMultiplier = 1.0
         utterance.volume = 1.0
 
-        // Use a good quality voice if available
-        if let voice = AVSpeechSynthesisVoice(language: Locale.current.language.languageCode?.identifier ?? "en") {
-            utterance.voice = voice
+        // Use a premium voice if available, otherwise system default
+        let lang = Locale.current.language.languageCode?.identifier ?? "en"
+        if let premium = AVSpeechSynthesisVoice.speechVoices()
+            .first(where: { $0.language.hasPrefix(lang) && $0.quality == .premium }) {
+            utterance.voice = premium
+        } else if let enhanced = AVSpeechSynthesisVoice.speechVoices()
+            .first(where: { $0.language.hasPrefix(lang) && $0.quality == .enhanced }) {
+            utterance.voice = enhanced
         }
+        // Otherwise: no voice set → system default (most reliable)
 
         currentMessageID = messageID
         isSpeaking = true
@@ -74,6 +91,7 @@ extension TTSService: @preconcurrency AVSpeechSynthesizerDelegate {
         Task { @MainActor in
             self.isSpeaking = false
             self.currentMessageID = nil
+            self.onFinishedSpeaking?()
         }
     }
 

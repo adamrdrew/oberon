@@ -10,10 +10,17 @@ final class SpeechService {
     var isRecording: Bool = false
     var audioLevel: Float = 0
 
+    /// Called when speech recognition finalizes (silence detected). Passes transcribed text.
+    var onSpeechFinalized: ((String) -> Void)?
+
     private var audioEngine: AVAudioEngine?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private let speechRecognizer = SFSpeechRecognizer(locale: Locale.current)
+
+    /// Silence detection: fires finalization when text stops changing
+    private var silenceTimer: Task<Void, Never>?
+    private let silenceTimeout: Duration = .milliseconds(1500)
 
     var isAvailable: Bool {
         speechRecognizer?.isAvailable ?? false
@@ -55,8 +62,24 @@ final class SpeechService {
                 guard let self else { return }
                 if let result {
                     self.transcribedText = result.bestTranscription.formattedString
+
+                    if result.isFinal {
+                        self.silenceTimer?.cancel()
+                        let text = result.bestTranscription.formattedString
+                        if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            self.onSpeechFinalized?(text)
+                        }
+                        self.stopRecordingInternal()
+                        return
+                    }
+
+                    // Voice mode: reset silence timer on each partial result
+                    if self.onSpeechFinalized != nil {
+                        self.resetSilenceTimer()
+                    }
                 }
-                if error != nil || (result?.isFinal ?? false) {
+                if error != nil {
+                    self.silenceTimer?.cancel()
                     self.stopRecordingInternal()
                 }
             }
@@ -101,16 +124,38 @@ final class SpeechService {
         return text
     }
 
+    private func resetSilenceTimer() {
+        silenceTimer?.cancel()
+        silenceTimer = Task { [weak self] in
+            try? await Task.sleep(for: self?.silenceTimeout ?? .milliseconds(1500))
+            guard !Task.isCancelled, let self, self.isRecording else { return }
+            let text = self.transcribedText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !text.isEmpty {
+                self.onSpeechFinalized?(text)
+            }
+            self.stopRecordingInternal()
+        }
+    }
+
     private func stopRecordingInternal() {
-        audioEngine?.stop()
-        audioEngine?.inputNode.removeTap(onBus: 0)
+        silenceTimer?.cancel()
+        silenceTimer = nil
+
         recognitionRequest?.endAudio()
         recognitionTask?.cancel()
+        audioEngine?.stop()
+        audioEngine?.inputNode.removeTap(onBus: 0)
+        audioEngine?.reset() // Release audio hardware so TTS can use it
 
         audioEngine = nil
         recognitionRequest = nil
         recognitionTask = nil
         isRecording = false
         audioLevel = 0
+
+        // Deactivate audio session so TTS can play
+        #if os(iOS)
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        #endif
     }
 }

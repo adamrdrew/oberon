@@ -10,6 +10,10 @@ import UIKit
 import AppKit
 #endif
 
+enum VoiceModeStatus {
+    case listening, thinking, speaking
+}
+
 @Observable
 @MainActor
 final class ChatViewModel {
@@ -24,6 +28,10 @@ final class ChatViewModel {
     var greetingSubtitle: String?
     var showGreeting: Bool = true
     var scrollTargetMessageID: UUID?
+
+    // MARK: - Voice Mode
+    var isVoiceMode: Bool = false
+    var voiceModeStatus: VoiceModeStatus = .listening
 
     /// Live pipeline steps from current tool calls (drained after response)
     var livePipelineSteps: [PipelineStep] = []
@@ -180,6 +188,11 @@ final class ChatViewModel {
             livePipelineSteps = []
             isGenerating = false
             chatService.clearStreamingState()
+            // Voice mode: restart recording so user can try again
+            if isVoiceMode {
+                voiceModeStatus = .listening
+                Task { await speechService.startRecording() }
+            }
             return
         }
 
@@ -222,6 +235,12 @@ final class ChatViewModel {
         livePipelineSteps = []
         Haptics.landed()
 
+        // Voice mode: auto-speak the response
+        if isVoiceMode, let lastAssistant = messages.last, lastAssistant.role == "assistant" {
+            voiceModeStatus = .speaking
+            ttsService.speak(text: lastAssistant.content, messageID: lastAssistant.id)
+        }
+
         // Auto-execute primary action after message is persisted
         if let primaryAction = toolResults.actions.first, primaryAction.autoExecutes {
             executeAction(primaryAction)
@@ -241,6 +260,55 @@ final class ChatViewModel {
     func stopGenerating() {
         isGenerating = false
         showTypingIndicator = false
+    }
+
+    // MARK: - Voice Mode
+
+    func toggleVoiceMode() {
+        if isVoiceMode {
+            disableVoiceMode()
+        } else {
+            enableVoiceMode()
+        }
+    }
+
+    func disableVoiceMode() {
+        isVoiceMode = false
+        voiceModeStatus = .listening
+        speechService.onSpeechFinalized = nil
+        ttsService.onFinishedSpeaking = nil
+        if speechService.isRecording {
+            _ = speechService.stopRecording()
+        }
+        ttsService.stop()
+        Haptics.tap()
+    }
+
+    private func enableVoiceMode() {
+        isVoiceMode = true
+        voiceModeStatus = .listening
+        Haptics.tap()
+
+        speechService.onSpeechFinalized = { [weak self] text in
+            guard let self, self.isVoiceMode else { return }
+            let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else {
+                // Empty transcription — restart recording
+                Task { await self.speechService.startRecording() }
+                return
+            }
+            self.inputText = trimmed
+            self.voiceModeStatus = .thinking
+            Task { await self.sendMessage() }
+        }
+
+        ttsService.onFinishedSpeaking = { [weak self] in
+            guard let self, self.isVoiceMode else { return }
+            self.voiceModeStatus = .listening
+            Task { await self.speechService.startRecording() }
+        }
+
+        Task { await speechService.startRecording() }
     }
 
     // MARK: - Action Execution
