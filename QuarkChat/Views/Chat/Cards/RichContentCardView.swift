@@ -7,6 +7,8 @@ struct RichContentCardView: View {
         switch content {
         case .weather(let data):
             WeatherCardView(data: data)
+        case .wikipedia(let data):
+            WikipediaCardView(data: data)
         }
     }
 }
