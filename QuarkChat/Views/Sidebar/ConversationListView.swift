@@ -52,6 +52,9 @@ struct ConversationListView: View {
 
             sidebarFooter
         }
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
         .alert("Delete Conversations", isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
             Button("Delete \(multiSelection.count) Conversation\(multiSelection.count == 1 ? "" : "s")", role: .destructive) {
@@ -82,6 +85,19 @@ struct ConversationListView: View {
     @ViewBuilder
     private var sidebarHeader: some View {
         VStack(spacing: 0) {
+            #if os(iOS)
+            // App branding
+            HStack {
+                Text("QuarkChat")
+                    .font(.system(size: 24, weight: .bold, design: .monospaced))
+                    .foregroundStyle(QTheme.quarkPrimary)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 12)
+            #endif
+
             StripeAccentView()
 
             VStack(spacing: 2) {
