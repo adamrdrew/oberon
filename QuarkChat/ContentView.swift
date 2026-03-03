@@ -1,12 +1,17 @@
 import SwiftUI
 import SwiftData
 
+private let welcomeVersionCurrent = 1
+private let welcomeVersionKey = "welcome.version.seen"
+
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(AppState.self) private var appState
 
     @Environment(\.scenePhase) private var scenePhase
     @State private var hasInitialized = false
+    @AppStorage(welcomeVersionKey) private var welcomeVersionSeen: Int = 0
+    @State private var showWelcome = false
 
     var body: some View {
         @Bindable var appStateBindable = appState
@@ -50,6 +55,15 @@ struct ContentView: View {
             OnboardingView()
                 .interactiveDismissDisabled()
         }
+        .sheet(isPresented: $showWelcome) {
+            WelcomeView {
+                welcomeVersionSeen = welcomeVersionCurrent
+                #if DEBUG
+                welcomeVersionSeen = 0
+                #endif
+                showWelcome = false
+            }
+        }
         .task {
             // Load persisted theme once at startup (not on .id() rebuilds)
             if !ThemeManager.shared.hasLoadedInitialTheme {
@@ -71,6 +85,10 @@ struct ContentView: View {
             if !appState.showOnboarding && appState.isModelAvailable && appState.selectedConversation == nil {
                 let conversation = Conversation()
                 appState.selectedConversation = conversation
+            }
+            // Show "What's New" for returning users after app updates
+            if !appState.showOnboarding && welcomeVersionSeen < welcomeVersionCurrent {
+                showWelcome = true
             }
             hasInitialized = true
         }
