@@ -3,7 +3,7 @@ import MarkdownUI
 
 struct MessageBubble: View {
     let message: Message
-    var userColor: Color = .blue
+    var userColor: Color = QTheme.quarkNavy
     var onActionExecute: ((RichAction) -> Void)?
     var onSpeakToggle: ((Message) -> Void)?
     var onCopy: ((Message) -> Void)?
@@ -28,30 +28,34 @@ struct MessageBubble: View {
             VStack(alignment: isUser ? .trailing : .leading, spacing: 14) {
                 if !isUser && !message.pipelineSteps.isEmpty {
                     PipelineStatusView(steps: message.pipelineSteps, isCompact: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 Group {
                     if isUser {
                         Text(message.content)
+                            .font(QTheme.body)
                     } else {
                         Markdown(message.content)
                             .markdownTheme(.quarkChat)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .glassEffect(
                     isUser ? .regular.tint(userColor) : .regular,
-                    in: .rect(cornerRadius: 18)
+                    in: .rect(cornerRadius: QTheme.cornerRadiusBubble)
                 )
 
-                // Rich content cards — extra spacing to avoid glass blending
+                // Rich content cards
                 if !isUser && !message.richContent.isEmpty {
                     VStack(spacing: 10) {
                         ForEach(message.richContent) { content in
                             RichContentCardView(content: content)
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 if !isUser && !message.citations.isEmpty {
@@ -62,6 +66,7 @@ struct MessageBubble: View {
                     ActionButtonsView(actions: message.actions) { action in
                         onActionExecute?(action)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 // Utility row: TTS + Copy for assistant messages
@@ -71,7 +76,7 @@ struct MessageBubble: View {
                             onSpeakToggle?(message)
                         } label: {
                             Image(systemName: isSpeaking ? "speaker.wave.2.fill" : "speaker.wave.2")
-                                .font(.caption)
+                                .font(QTheme.caption)
                                 .symbolEffect(.variableColor, isActive: isSpeaking)
                         }
                         .buttonStyle(.glass)
@@ -80,21 +85,20 @@ struct MessageBubble: View {
                             onCopy?(message)
                         } label: {
                             Image(systemName: "doc.on.doc")
-                                .font(.caption)
+                                .font(QTheme.caption)
                         }
                         .buttonStyle(.glass)
                     }
                 }
 
                 Text(message.createdAt, style: .time)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(QTheme.timestamp)
+                    .foregroundStyle(QTheme.quarkTertiary)
                     .padding(.horizontal, 8)
             }
-
-            if !isUser { Spacer(minLength: 60) }
+            .frame(maxWidth: isUser ? nil : .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, QTheme.contentPadding)
         .opacity(shouldAnimate ? (hasAppeared ? 1 : 0) : 1)
         .offset(x: shouldAnimate ? (hasAppeared ? 0 : (isUser ? 30 : -30)) : 0)
         .animation(
@@ -109,33 +113,3 @@ struct MessageBubble: View {
     }
 }
 
-extension Theme {
-    static let quarkChat = Theme()
-        .code {
-            FontFamilyVariant(.monospaced)
-            FontSize(.em(0.85))
-        }
-        .strong {
-            FontWeight(.semibold)
-        }
-        .link {
-            ForegroundColor(.blue)
-        }
-        .codeBlock { configuration in
-            ScrollView(.horizontal, showsIndicators: false) {
-                configuration.label
-                    .font(.system(.callout, design: .monospaced))
-                    .padding(12)
-            }
-            .background(.quaternary, in: .rect(cornerRadius: 8))
-            .markdownMargin(top: 8, bottom: 8)
-        }
-        .paragraph { configuration in
-            configuration.label
-                .markdownMargin(top: 0, bottom: 8)
-        }
-        .listItem { configuration in
-            configuration.label
-                .markdownMargin(top: .em(0.1))
-        }
-}

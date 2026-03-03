@@ -20,10 +20,10 @@ enum StepCategory: String, Codable, Sendable {
 
     var color: Color {
         switch self {
-        case .webSearch: return .blue
-        case .calculation: return .purple
-        case .geoSearch: return .green
-        case .weather: return .blue
+        case .webSearch: return QTheme.quarkTeal
+        case .calculation: return QTheme.quarkAccent
+        case .geoSearch: return QTheme.quarkNavy
+        case .weather: return QTheme.quarkTeal.opacity(0.7)
         }
     }
 }

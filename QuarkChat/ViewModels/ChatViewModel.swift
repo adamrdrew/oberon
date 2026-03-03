@@ -19,7 +19,7 @@ final class ChatViewModel {
     var showTypingIndicator: Bool = false
     var errorMessage: String?
     var isUserScrolledUp: Bool = false
-    var userBubbleColor: String = "#007AFF"
+    var userBubbleColor: String = "#1E2D4D"
     var greetingHeadline: String?
     var greetingSubtitle: String?
     var showGreeting: Bool = true
@@ -51,7 +51,7 @@ final class ChatViewModel {
         self.conversation = conversation
         self.modelContext = modelContext
         self.userProfile = userProfile
-        self.userBubbleColor = userProfile?.favoriteColorHex ?? "#007AFF"
+        self.userBubbleColor = userProfile?.favoriteColorHex ?? "#1E2D4D"
         loadMessages()
 
         // Build tools with user context injected
@@ -112,6 +112,11 @@ final class ChatViewModel {
         inputText = ""
         errorMessage = nil
         showGreeting = false
+
+        // Insert conversation into SwiftData on first message
+        if conversation.modelContext == nil {
+            modelContext.insert(conversation)
+        }
 
         // Persist user message
         let nextIndex = messages.count

@@ -23,26 +23,49 @@ struct ContentView: View {
                     ChatView(conversation: conversation)
                         .id(conversation.id)
                 } else {
-                    ContentUnavailableView {
-                        Label("QuarkChat", systemImage: "bubble.left.and.bubble.right")
-                    } description: {
+                    VStack(spacing: 12) {
+                        Image(systemName: "bubble.left.and.bubble.right")
+                            .font(.system(size: 40, design: .monospaced))
+                            .foregroundStyle(QTheme.quarkAccent)
+                        Text("QuarkChat")
+                            .font(QTheme.displayLarge)
+                            .foregroundStyle(QTheme.quarkPrimary)
                         Text("Select a conversation or start a new chat.")
+                            .font(QTheme.bodySmall)
+                            .foregroundStyle(QTheme.quarkSecondary)
                     }
                 }
             } else {
-                ContentUnavailableView {
-                    Label("Apple Intelligence Required", systemImage: "brain")
-                } description: {
+                VStack(spacing: 12) {
+                    Image(systemName: "brain")
+                        .font(.system(size: 40, design: .monospaced))
+                        .foregroundStyle(QTheme.quarkAccent)
+                    Text("APPLE INTELLIGENCE REQUIRED")
+                        .font(QTheme.sectionHeader)
+                        .textCase(.uppercase)
+                        .tracking(3)
+                        .foregroundStyle(QTheme.quarkSecondary)
                     Text(appState.unavailableReason)
+                        .font(QTheme.bodySmall)
+                        .foregroundStyle(QTheme.quarkTertiary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
                 }
             }
         }
         .task {
+            // Load persisted theme once at startup (not on .id() rebuilds)
+            if !ThemeManager.shared.hasLoadedInitialTheme {
+                let profileDescriptor = FetchDescriptor<UserProfile>()
+                if let profile = try? modelContext.fetch(profileDescriptor).first {
+                    ThemeManager.shared.applyTheme(id: profile.themeID)
+                }
+                ThemeManager.shared.hasLoadedInitialTheme = true
+            }
+
             appState.checkAvailability()
             if appState.isModelAvailable && appState.selectedConversation == nil {
                 let conversation = Conversation()
-                modelContext.insert(conversation)
-                try? modelContext.save()
                 appState.selectedConversation = conversation
             }
             hasInitialized = true

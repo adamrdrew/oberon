@@ -31,6 +31,9 @@ struct ConversationListView: View {
                 navigationList
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            StripeAccentView()
+        }
         .searchable(text: $searchText, prompt: "Search conversations")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -70,6 +73,7 @@ struct ConversationListView: View {
                     }
                 } label: {
                     Text(isEditing ? "Done" : "Edit")
+                        .font(QTheme.label)
                 }
                 .disabled(conversations.isEmpty)
             }
@@ -80,6 +84,7 @@ struct ConversationListView: View {
                         showDeleteConfirmation = true
                     } label: {
                         Text("Delete (\(multiSelection.count))")
+                            .font(QTheme.label)
                     }
                     .disabled(multiSelection.isEmpty)
                 }
@@ -149,9 +154,11 @@ struct ConversationListView: View {
                     Label("No Conversations", systemImage: "bubble.left.and.bubble.right")
                 } description: {
                     Text("Start a new chat to begin.")
+                        .font(QTheme.bodySmall)
                 }
             } else {
-                ForEach(filteredConversations) { conversation in
+                Section {
+                    ForEach(filteredConversations) { conversation in
                     NavigationLink(value: conversation) {
                         ConversationRow(conversation: conversation)
                     }
@@ -181,6 +188,7 @@ struct ConversationListView: View {
                         )
                     }
                 }
+                }
             }
         }
     }
@@ -195,6 +203,7 @@ struct ConversationListView: View {
                     Label("No Conversations", systemImage: "bubble.left.and.bubble.right")
                 } description: {
                     Text("Start a new chat to begin.")
+                        .font(QTheme.bodySmall)
                 }
             } else {
                 ForEach(filteredConversations) { conversation in

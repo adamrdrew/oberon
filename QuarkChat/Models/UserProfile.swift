@@ -9,7 +9,8 @@ class UserProfile {
     var location: String = ""
     var aboutMe: String = ""
     var responsePreference: String = ""
-    var favoriteColorHex: String = "#007AFF"
+    var favoriteColorHex: String = "#1E2D4D"
+    var themeID: String = "quark"
 
     var favoriteColor: Color {
         Color(hex: favoriteColorHex) ?? .blue

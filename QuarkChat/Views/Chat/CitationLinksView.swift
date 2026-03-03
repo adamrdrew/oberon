@@ -16,18 +16,18 @@ struct CitationLinksView: View {
                 } label: {
                     Label {
                         Text(displayHost(citation.url))
-                            .font(.caption)
+                            .font(QTheme.citation)
                             .lineLimit(1)
                     } icon: {
                         Image(systemName: "link")
-                            .font(.caption2)
+                            .font(QTheme.citation)
                     }
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(QTheme.quarkTeal)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.leading, 8)
+        .padding(.leading, 2)
     }
 
     private func displayHost(_ urlString: String) -> String {

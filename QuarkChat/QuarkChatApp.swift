@@ -4,6 +4,7 @@ import SwiftData
 @main
 struct QuarkChatApp: App {
     @State private var appState = AppState()
+    @State private var themeManager = ThemeManager.shared
 
     let container: ModelContainer = {
         let syncedSchema = Schema([Conversation.self, Message.self])
@@ -35,6 +36,8 @@ struct QuarkChatApp: App {
         WindowGroup {
             ContentView()
                 .environment(appState)
+                .environment(themeManager)
+                .id(themeManager.currentTheme.id)
         }
         .modelContainer(container)
     }

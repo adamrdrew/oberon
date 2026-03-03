@@ -66,7 +66,7 @@ struct ChatView: View {
                             ForEach(viewModel.messages, id: \.id) { message in
                                 MessageBubble(
                                     message: message,
-                                    userColor: Color(hex: viewModel.userBubbleColor) ?? .blue,
+                                    userColor: Color(hex: viewModel.userBubbleColor) ?? QTheme.quarkNavy,
                                     onActionExecute: { action in
                                         viewModel.executeAction(action)
                                     },
@@ -163,25 +163,36 @@ struct ChatView: View {
     @ViewBuilder
     private var greetingContent: some View {
         VStack(spacing: 8) {
+            Text("QUARK")
+                .font(QTheme.sectionHeader)
+                .textCase(.uppercase)
+                .tracking(3)
+                .foregroundStyle(QTheme.quarkTertiary)
+                .opacity(greetingAppeared ? 1 : 0)
+
             Image(systemName: "bubble.left.and.bubble.right.fill")
-                .font(.system(size: 44))
-                .foregroundStyle(.tertiary)
-                .padding(.bottom, 8)
+                .font(.system(size: 48, design: .monospaced))
+                .foregroundStyle(QTheme.quarkAccent)
+                .padding(.bottom, 4)
                 .scaleEffect(greetingAppeared ? 1 : 0.6)
+                .opacity(greetingAppeared ? 1 : 0)
+
+            StripeAccentView()
+                .frame(width: 120)
                 .opacity(greetingAppeared ? 1 : 0)
 
             if let headline = viewModel.greetingHeadline {
                 Text(headline)
-                    .font(.title)
-                    .fontWeight(.semibold)
+                    .font(QTheme.displayLarge)
+                    .foregroundStyle(QTheme.quarkPrimary)
                     .multilineTextAlignment(.center)
                     .scaleEffect(greetingAppeared ? 1 : 0.9)
                     .opacity(greetingAppeared ? 1 : 0)
 
                 if let subtitle = viewModel.greetingSubtitle {
                     Text(subtitle)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
+                        .font(.system(size: 15, weight: .regular, design: .monospaced))
+                        .foregroundStyle(QTheme.quarkSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 40)
                         .opacity(greetingAppeared ? 1 : 0)

@@ -16,8 +16,6 @@ final class ConversationListViewModel {
         defer { isCreatingConversation = false }
 
         let conversation = Conversation()
-        modelContext.insert(conversation)
-        try? modelContext.save()
         appState.selectedConversation = conversation
         return conversation
     }

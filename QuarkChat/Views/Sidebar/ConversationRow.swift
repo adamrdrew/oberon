@@ -4,36 +4,28 @@ struct ConversationRow: View {
     let conversation: Conversation
 
     var body: some View {
-        HStack(spacing: 8) {
-            // Accent dot for recently active conversations
-            Circle()
-                .fill(.tint)
-                .frame(width: 6, height: 6)
-                .opacity(recentIndicatorOpacity)
+        VStack(alignment: .leading, spacing: 4) {
+            Text(conversation.title)
+                .font(QTheme.conversationTitle)
+                .lineLimit(1)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(conversation.title)
-                    .font(.headline)
-                    .lineLimit(1)
-
-                HStack {
-                    if let lastMessage = conversation.sortedMessages.last {
-                        Text(lastMessage.content)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-
-                    Spacer()
-
-                    Text(relativeTimestamp(for: conversation.updatedAt))
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+            HStack {
+                if let lastMessage = conversation.sortedMessages.last {
+                    Text(lastMessage.content)
+                        .font(QTheme.conversationPreview)
+                        .foregroundStyle(QTheme.quarkSecondary)
                         .lineLimit(1)
                 }
+
+                Spacer()
+
+                Text(relativeTimestamp(for: conversation.updatedAt))
+                    .font(QTheme.timestamp)
+                    .foregroundStyle(QTheme.quarkTertiary)
+                    .lineLimit(1)
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 6)
     }
 
     // MARK: - Relative Timestamp
@@ -57,15 +49,5 @@ struct ConversationRow: View {
         } else {
             return date.formatted(.dateTime.month(.abbreviated).day().year())
         }
-    }
-
-    // MARK: - Recent Indicator
-
-    /// Full opacity for conversations updated within the last hour, fading to zero by 2 hours
-    private var recentIndicatorOpacity: Double {
-        let elapsed = Date().timeIntervalSince(conversation.updatedAt)
-        if elapsed < 3600 { return 1.0 }
-        if elapsed < 7200 { return 1.0 - (elapsed - 3600) / 3600 }
-        return 0
     }
 }

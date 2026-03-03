@@ -9,30 +9,31 @@ struct WeatherCardView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(data.locationName)
-                        .font(.headline)
+                        .font(QTheme.conversationTitle)
+
                     Text("\(Int(data.temperature))°\(data.temperatureUnit)")
-                        .font(.system(size: 36, weight: .thin))
+                        .font(QTheme.weatherTemp)
                 }
 
                 Spacer()
 
                 Image(systemName: data.weatherSymbol)
-                    .font(.system(size: 40))
+                    .font(.system(size: 40, design: .monospaced))
                     .symbolRenderingMode(.multicolor)
             }
 
             // Details row
             HStack(spacing: 16) {
                 Label("H: \(Int(data.highTemp))°", systemImage: "thermometer.high")
-                    .font(.caption)
+                    .font(QTheme.weatherDetail)
                 Label("L: \(Int(data.lowTemp))°", systemImage: "thermometer.low")
-                    .font(.caption)
+                    .font(QTheme.weatherDetail)
                 Label("\(Int(data.humidity))%", systemImage: "humidity")
-                    .font(.caption)
+                    .font(QTheme.weatherDetail)
                 Label("\(Int(data.windSpeed)) mph", systemImage: "wind")
-                    .font(.caption)
+                    .font(QTheme.weatherDetail)
             }
-            .foregroundStyle(.secondary)
+            .foregroundStyle(QTheme.quarkSecondary)
 
             // 5-day forecast
             if !data.forecast.isEmpty {
@@ -42,16 +43,16 @@ struct WeatherCardView: View {
                     ForEach(Array(data.forecast.enumerated()), id: \.offset) { _, day in
                         VStack(spacing: 4) {
                             Text(dayLabel(day.date))
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .font(QTheme.timestamp)
+                                .foregroundStyle(QTheme.quarkSecondary)
                             Image(systemName: WeatherData.symbolForCode(day.weatherCode))
-                                .font(.caption)
+                                .font(QTheme.caption)
                                 .symbolRenderingMode(.multicolor)
                             Text("\(Int(day.highTemp))°")
-                                .font(.caption2)
+                                .font(QTheme.timestamp)
                             Text("\(Int(day.lowTemp))°")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .font(QTheme.timestamp)
+                                .foregroundStyle(QTheme.quarkSecondary)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -59,7 +60,7 @@ struct WeatherCardView: View {
             }
         }
         .padding(14)
-        .glassEffect(.regular.tint(.blue.opacity(0.15)), in: .rect(cornerRadius: 16))
+        .glassEffect(.regular.tint(QTheme.quarkTeal.opacity(0.1)), in: .rect(cornerRadius: QTheme.cornerRadiusCard))
     }
 
     private func dayLabel(_ dateString: String) -> String {

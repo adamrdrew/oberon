@@ -9,7 +9,8 @@ final class SettingsViewModel {
     var location: String = ""
     var aboutMe: String = ""
     var responsePreference: String = ""
-    var favoriteColorHex: String = "#007AFF"
+    var favoriteColorHex: String = "#1E2D4D"
+    var selectedThemeID: String = "quark"
 
     private var profile: UserProfile?
 
@@ -36,6 +37,8 @@ final class SettingsViewModel {
         self.aboutMe = profile.aboutMe
         self.responsePreference = profile.responsePreference
         self.favoriteColorHex = profile.favoriteColorHex
+        // Use ThemeManager as source of truth (profile may be stale if .id() rebuild interfered)
+        self.selectedThemeID = ThemeManager.shared.currentTheme.id
     }
 
     func save(context: Any?) {
@@ -45,5 +48,6 @@ final class SettingsViewModel {
         profile.aboutMe = String(aboutMe.prefix(Self.maxAboutMeLength))
         profile.responsePreference = String(responsePreference.prefix(Self.maxResponsePrefLength))
         profile.favoriteColorHex = favoriteColorHex
+        profile.themeID = selectedThemeID
     }
 }
