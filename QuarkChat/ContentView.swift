@@ -5,39 +5,30 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(AppState.self) private var appState
 
+    @Environment(\.scenePhase) private var scenePhase
     @State private var hasInitialized = false
 
     var body: some View {
         @Bindable var appStateBindable = appState
 
-        NavigationSplitView {
-            ConversationListView()
-            #if os(macOS)
-                .navigationSplitViewColumnWidth(min: 220, ideal: 260)
-            #endif
-        } detail: {
+        Group {
             if !hasInitialized {
                 Color.clear
             } else if appState.isModelAvailable {
-                if let conversation = appState.selectedConversation {
-                    ChatView(conversation: conversation)
-                        .id(conversation.id)
+                NavigationSplitView {
+                    ConversationListView()
+                    #if os(macOS)
+                        .navigationSplitViewColumnWidth(min: 220, ideal: 260)
+                    #endif
+                } detail: {
+                    if let conversation = appState.selectedConversation {
+                        ChatView(conversation: conversation)
+                            .id(conversation.id)
+                    }
                 }
             } else {
-                VStack(spacing: 12) {
-                    Image(systemName: "brain")
-                        .font(.system(size: 40, design: .monospaced))
-                        .foregroundStyle(QTheme.quarkAccent)
-                    Text("APPLE INTELLIGENCE REQUIRED")
-                        .font(QTheme.sectionHeader)
-                        .textCase(.uppercase)
-                        .tracking(3)
-                        .foregroundStyle(QTheme.quarkSecondary)
-                    Text(appState.unavailableReason)
-                        .font(QTheme.bodySmall)
-                        .foregroundStyle(QTheme.quarkTertiary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
+                ModelUnavailableView(availability: appState.modelAvailability) {
+                    appState.checkAvailability()
                 }
             }
         }
@@ -47,7 +38,10 @@ struct ContentView: View {
                 appState.selectedConversation = Conversation()
             }
         }
-        .sheet(isPresented: $appStateBindable.showOnboarding) {
+        .sheet(isPresented: Binding(
+            get: { appStateBindable.showOnboarding && appState.isModelAvailable },
+            set: { appStateBindable.showOnboarding = $0 }
+        )) {
             OnboardingView()
                 .interactiveDismissDisabled()
         }
@@ -79,6 +73,16 @@ struct ContentView: View {
             // After onboarding dismisses, create the initial conversation
             if !isShowing && appState.isModelAvailable && appState.selectedConversation == nil {
                 appState.selectedConversation = Conversation()
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // Re-check when user returns from Settings after enabling Apple Intelligence
+            if phase == .active && hasInitialized && !appState.isModelAvailable {
+                appState.checkAvailability()
+                // If model just became available, set up initial state
+                if appState.isModelAvailable && appState.selectedConversation == nil && !appState.showOnboarding {
+                    appState.selectedConversation = Conversation()
+                }
             }
         }
     }
