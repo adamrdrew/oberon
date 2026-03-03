@@ -24,6 +24,8 @@ struct ContentView: View {
                     if let conversation = appState.selectedConversation {
                         ChatView(conversation: conversation)
                             .id(conversation.id)
+                    } else {
+                        ContentUnavailableView("No Chat Selected", systemImage: "bubble.left.and.bubble.right")
                     }
                 }
             } else {
@@ -34,9 +36,12 @@ struct ContentView: View {
         }
         .id(ThemeManager.shared.currentTheme.id)
         .onChange(of: appState.selectedConversation) { _, newValue in
+            #if os(macOS)
+            // macOS always shows the detail pane — keep it filled
             if newValue == nil && hasInitialized && appState.isModelAvailable {
                 appState.selectedConversation = Conversation()
             }
+            #endif
         }
         .sheet(isPresented: Binding(
             get: { appStateBindable.showOnboarding && appState.isModelAvailable },
@@ -79,10 +84,12 @@ struct ContentView: View {
             // Re-check when user returns from Settings after enabling Apple Intelligence
             if phase == .active && hasInitialized && !appState.isModelAvailable {
                 appState.checkAvailability()
-                // If model just became available, set up initial state
+                #if os(macOS)
+                // macOS always shows the detail pane — keep it filled
                 if appState.isModelAvailable && appState.selectedConversation == nil && !appState.showOnboarding {
                     appState.selectedConversation = Conversation()
                 }
+                #endif
             }
         }
     }
