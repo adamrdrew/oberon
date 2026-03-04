@@ -34,35 +34,34 @@ struct WikipediaCardView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
                         ForEach(Array(data.images.enumerated()), id: \.element.id) { index, image in
-                            Button {
-                                onImageTap?(index)
-                            } label: {
-                                AsyncImage(url: URL(string: image.imageURL)) { phase in
-                                    switch phase {
-                                    case .success(let img):
-                                        img
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fill)
-                                    case .failure:
-                                        Rectangle()
-                                            .fill(OTheme.surface.opacity(0.3))
-                                            .overlay {
-                                                Image(systemName: "photo")
-                                                    .font(OTheme.caption)
-                                                    .foregroundStyle(OTheme.tertiary)
-                                            }
-                                    case .empty:
-                                        Rectangle()
-                                            .fill(OTheme.surface.opacity(0.15))
-                                            .overlay { ProgressView() }
-                                    @unknown default:
-                                        Color.clear
-                                    }
+                            AsyncImage(url: URL(string: image.imageURL)) { phase in
+                                switch phase {
+                                case .success(let img):
+                                    img
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                case .failure:
+                                    Rectangle()
+                                        .fill(OTheme.surface.opacity(0.3))
+                                        .overlay {
+                                            Image(systemName: "photo")
+                                                .font(OTheme.caption)
+                                                .foregroundStyle(OTheme.tertiary)
+                                        }
+                                case .empty:
+                                    Rectangle()
+                                        .fill(OTheme.surface.opacity(0.15))
+                                        .overlay { ProgressView() }
+                                @unknown default:
+                                    Color.clear
                                 }
-                                .frame(width: 160, height: 80)
-                                .clipShape(.rect(cornerRadius: OTheme.cornerRadiusSmall))
                             }
-                            .buttonStyle(.plain)
+                            .frame(width: 160, height: 80)
+                            .clipShape(.rect(cornerRadius: OTheme.cornerRadiusSmall))
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                onImageTap?(index)
+                            }
                         }
                     }
                 }

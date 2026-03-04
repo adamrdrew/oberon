@@ -1,5 +1,8 @@
 import SwiftUI
 import SwiftData
+import os
+
+private let logger = Logger(subsystem: "com.adamdrew.oberon", category: "ChatView")
 
 struct ChatView: View {
     let conversation: Conversation
@@ -95,6 +98,7 @@ struct ChatView: View {
                                         viewModel.executeAction(action)
                                     },
                                     onImageViewerPresent: { images, index in
+                                        logger.info("🖼️ ChatView: presenting viewer, \(images.count) images, index=\(index)")
                                         imageViewerImages = images
                                         imageViewerIndex = index
                                         showImageViewer = true

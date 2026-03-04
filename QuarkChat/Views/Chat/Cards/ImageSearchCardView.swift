@@ -1,4 +1,7 @@
 import SwiftUI
+import os
+
+private let logger = Logger(subsystem: "com.adamdrew.oberon", category: "ImageSearchCard")
 
 struct ImageSearchCardView: View {
     let data: ImageSearchData
@@ -36,35 +39,35 @@ struct ImageSearchCardView: View {
             // 2-column image grid
             LazyVGrid(columns: columns, spacing: 6) {
                 ForEach(Array(data.images.enumerated()), id: \.element.id) { index, image in
-                    Button {
-                        onImageTap?(index)
-                    } label: {
-                        AsyncImage(url: URL(string: image.thumbnail)) { phase in
-                            switch phase {
-                            case .success(let img):
-                                img
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                            case .failure:
-                                Rectangle()
-                                    .fill(OTheme.surface.opacity(0.3))
-                                    .overlay {
-                                        Image(systemName: "photo")
-                                            .font(OTheme.caption)
-                                            .foregroundStyle(OTheme.tertiary)
-                                    }
-                            case .empty:
-                                Rectangle()
-                                    .fill(OTheme.surface.opacity(0.15))
-                                    .overlay { ProgressView() }
-                            @unknown default:
-                                Color.clear
-                            }
+                    AsyncImage(url: URL(string: image.thumbnail)) { phase in
+                        switch phase {
+                        case .success(let img):
+                            img
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        case .failure:
+                            Rectangle()
+                                .fill(OTheme.surface.opacity(0.3))
+                                .overlay {
+                                    Image(systemName: "photo")
+                                        .font(OTheme.caption)
+                                        .foregroundStyle(OTheme.tertiary)
+                                }
+                        case .empty:
+                            Rectangle()
+                                .fill(OTheme.surface.opacity(0.15))
+                                .overlay { ProgressView() }
+                        @unknown default:
+                            Color.clear
                         }
-                        .frame(height: 100)
-                        .clipShape(.rect(cornerRadius: OTheme.cornerRadiusSmall))
                     }
-                    .buttonStyle(.plain)
+                    .frame(height: 100)
+                    .clipShape(.rect(cornerRadius: OTheme.cornerRadiusSmall))
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        logger.info("🖼️ Image tile tapped: index=\(index), hasCallback=\(onImageTap != nil)")
+                        onImageTap?(index)
+                    }
                     .opacity(tilesAppeared ? 1 : 0)
                     .scaleEffect(tilesAppeared ? 1 : 0.85)
                     .animation(

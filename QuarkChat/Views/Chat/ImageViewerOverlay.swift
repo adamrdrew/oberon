@@ -1,4 +1,7 @@
 import SwiftUI
+import os
+
+private let logger = Logger(subsystem: "com.adamdrew.oberon", category: "ImageViewer")
 
 // MARK: - ViewableImage (universal wrapper)
 
@@ -41,21 +44,20 @@ struct ImageViewerOverlay: View {
             Color.black
                 .ignoresSafeArea()
 
-            // Image pager
-            TabView(selection: $selectedIndex) {
-                ForEach(Array(images.enumerated()), id: \.element.id) { index, image in
-                    imagePageView(image)
-                        .tag(index)
+            // Image display
+            imagePageView(images[safe: selectedIndex])
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.spring(duration: 0.25, bounce: 0.1)) {
+                        showChrome.toggle()
+                    }
                 }
-            }
-            #if os(iOS)
-            .tabViewStyle(.page(indexDisplayMode: .never))
+
+            // Navigation arrows (macOS + iPad)
+            #if os(macOS)
+            navigationArrows
             #endif
-            .onTapGesture {
-                withAnimation(.spring(duration: 0.25, bounce: 0.1)) {
-                    showChrome.toggle()
-                }
-            }
 
             // Chrome overlay
             if showChrome {
@@ -71,39 +73,116 @@ struct ImageViewerOverlay: View {
             reduceMotion ? .none : .spring(duration: 0.3, bounce: 0.1),
             value: showChrome
         )
+        .animation(
+            reduceMotion ? .none : .easeInOut(duration: 0.3),
+            value: selectedIndex
+        )
         #if os(iOS)
         .statusBarHidden(!reduceMotion)
         #endif
+        #if os(macOS)
+        .frame(minWidth: 700, idealWidth: 900, minHeight: 500, idealHeight: 700)
+        #endif
+        .onKeyPress(.leftArrow) {
+            navigatePrevious()
+            return .handled
+        }
+        .onKeyPress(.rightArrow) {
+            navigateNext()
+            return .handled
+        }
+        .onKeyPress(.escape) {
+            isPresented = false
+            return .handled
+        }
     }
 
     // MARK: - Image Page
 
     @ViewBuilder
-    private func imagePageView(_ image: ViewableImage) -> some View {
-        AsyncImage(url: URL(string: image.imageURL)) { phase in
-            switch phase {
-            case .success(let img):
-                img
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .scaleEffect(scale * magnification)
-                    .gesture(pinchGesture)
-                    .gesture(doubleTapGesture)
-            case .failure:
-                VStack(spacing: 12) {
-                    Image(systemName: "photo.badge.exclamationmark")
-                        .font(.system(size: 40))
-                        .foregroundStyle(.white.opacity(0.5))
-                    Text("Failed to load")
-                        .font(OTheme.caption)
-                        .foregroundStyle(.white.opacity(0.5))
+    private func imagePageView(_ image: ViewableImage?) -> some View {
+        if let image {
+            AsyncImage(url: URL(string: image.imageURL)) { phase in
+                switch phase {
+                case .success(let img):
+                    img
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .scaleEffect(scale * magnification)
+                        .gesture(pinchGesture)
+                        .gesture(doubleTapGesture)
+                        .transition(.opacity)
+                case .failure:
+                    VStack(spacing: 12) {
+                        Image(systemName: "photo.badge.exclamationmark")
+                            .font(.system(size: 40))
+                            .foregroundStyle(.white.opacity(0.5))
+                        Text("Failed to load")
+                            .font(OTheme.caption)
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                case .empty:
+                    ProgressView()
+                        .tint(.white)
+                        .scaleEffect(1.2)
+                @unknown default:
+                    Color.clear
                 }
-            case .empty:
-                ProgressView()
-                    .tint(.white)
-                    .scaleEffect(1.2)
-            @unknown default:
-                Color.clear
+            }
+            .id(image.id)
+        }
+    }
+
+    // MARK: - Navigation
+
+    #if os(macOS)
+    @ViewBuilder
+    private var navigationArrows: some View {
+        HStack {
+            if selectedIndex > 0 {
+                Button {
+                    navigatePrevious()
+                } label: {
+                    Image(systemName: "chevron.left.circle.fill")
+                        .font(.system(size: 36))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .symbolRenderingMode(.hierarchical)
+                }
+                .buttonStyle(.plain)
+            }
+
+            Spacer()
+
+            if selectedIndex < images.count - 1 {
+                Button {
+                    navigateNext()
+                } label: {
+                    Image(systemName: "chevron.right.circle.fill")
+                        .font(.system(size: 36))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .symbolRenderingMode(.hierarchical)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 16)
+    }
+    #endif
+
+    private func navigatePrevious() {
+        if selectedIndex > 0 {
+            scale = 1.0
+            withAnimation(reduceMotion ? .none : .spring(duration: 0.3, bounce: 0.15)) {
+                selectedIndex -= 1
+            }
+        }
+    }
+
+    private func navigateNext() {
+        if selectedIndex < images.count - 1 {
+            scale = 1.0
+            withAnimation(reduceMotion ? .none : .spring(duration: 0.3, bounce: 0.15)) {
+                selectedIndex += 1
             }
         }
     }
@@ -123,6 +202,7 @@ struct ImageViewerOverlay: View {
                         .foregroundStyle(.white.opacity(0.8))
                         .symbolRenderingMode(.hierarchical)
                 }
+                .buttonStyle(.plain)
 
                 Spacer()
 
