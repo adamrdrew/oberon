@@ -92,12 +92,8 @@ final class ChatViewModel {
     }
 
     private func buildTools(userProfile: UserProfile?) -> [any Tool] {
-        let location = userProfile?.location
         return [
             WebSearchTool(),
-            SearchNearbyTool(userLocation: location),
-            GetWeatherTool(userLocation: location),
-            CalculatorTool(),
         ]
     }
 
