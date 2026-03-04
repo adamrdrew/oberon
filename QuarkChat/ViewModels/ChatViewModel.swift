@@ -190,6 +190,8 @@ final class ChatViewModel {
         showTypingIndicator = false
 
         guard let responseText else {
+            // Drain any stale tool results so they don't leak into future conversations
+            _ = await ToolResultStore.shared.takeAll()
             livePipelineSteps = []
             isGenerating = false
             chatService.clearStreamingState()

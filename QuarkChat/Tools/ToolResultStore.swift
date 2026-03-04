@@ -11,6 +11,13 @@ actor ToolResultStore {
     private(set) var suggestedReplies: [SuggestedReply] = []
     private(set) var pipelineSteps: [PipelineStep] = []
 
+    /// Tracks whether web search has already run this turn (prevents double-search)
+    private(set) var webSearchPerformed: Bool = false
+
+    func markWebSearchPerformed() {
+        webSearchPerformed = true
+    }
+
     func addCitations(_ items: [Citation]) {
         citations.append(contentsOf: items)
     }
@@ -66,6 +73,7 @@ actor ToolResultStore {
         richContent = []
         suggestedReplies = []
         pipelineSteps = []
+        webSearchPerformed = false
         return results
     }
 }

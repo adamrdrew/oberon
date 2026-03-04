@@ -28,42 +28,43 @@ struct WikipediaCardView: View {
                 Spacer()
             }
 
-            // Image tiles
+            // Image tiles (horizontally scrollable to prevent card overflow)
             if !data.images.isEmpty {
-                HStack(spacing: 6) {
-                    ForEach(data.images) { image in
-                        Button {
-                            if let url = URL(string: image.filePageURL), !image.filePageURL.isEmpty {
-                                openURL(url)
-                            }
-                        } label: {
-                            AsyncImage(url: URL(string: image.imageURL)) { phase in
-                                switch phase {
-                                case .success(let img):
-                                    img
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                case .failure:
-                                    Rectangle()
-                                        .fill(OTheme.surface.opacity(0.3))
-                                        .overlay {
-                                            Image(systemName: "photo")
-                                                .font(OTheme.caption)
-                                                .foregroundStyle(OTheme.tertiary)
-                                        }
-                                case .empty:
-                                    Rectangle()
-                                        .fill(OTheme.surface.opacity(0.15))
-                                        .overlay { ProgressView() }
-                                @unknown default:
-                                    Color.clear
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(data.images) { image in
+                            Button {
+                                if let url = URL(string: image.filePageURL), !image.filePageURL.isEmpty {
+                                    openURL(url)
                                 }
+                            } label: {
+                                AsyncImage(url: URL(string: image.imageURL)) { phase in
+                                    switch phase {
+                                    case .success(let img):
+                                        img
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                    case .failure:
+                                        Rectangle()
+                                            .fill(OTheme.surface.opacity(0.3))
+                                            .overlay {
+                                                Image(systemName: "photo")
+                                                    .font(OTheme.caption)
+                                                    .foregroundStyle(OTheme.tertiary)
+                                            }
+                                    case .empty:
+                                        Rectangle()
+                                            .fill(OTheme.surface.opacity(0.15))
+                                            .overlay { ProgressView() }
+                                    @unknown default:
+                                        Color.clear
+                                    }
+                                }
+                                .frame(width: 160, height: 80)
+                                .clipShape(.rect(cornerRadius: OTheme.cornerRadiusSmall))
                             }
-                            .frame(height: 80)
-                            .frame(maxWidth: .infinity)
-                            .clipShape(.rect(cornerRadius: OTheme.cornerRadiusSmall))
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
             }
