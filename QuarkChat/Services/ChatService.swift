@@ -38,6 +38,9 @@ final class ChatService {
             )
             estimatedTokens = TokenBudget.estimateTokens(instructions)
         }
+
+        // Preload model resources so the first response has no cold-start delay
+        session?.prewarm()
     }
 
     /// Clear session when switching conversations.
@@ -189,6 +192,7 @@ final class ChatService {
             transcript: newTranscript
         )
         self.estimatedTokens = TokenBudget.estimateTokens(for: newTranscript)
+        self.session?.prewarm()
     }
 
     // MARK: - Utility Sessions
