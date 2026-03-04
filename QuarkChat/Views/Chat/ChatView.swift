@@ -12,6 +12,9 @@ struct ChatView: View {
     @State private var hasScrolledToBottom = false
     @State private var greetingAppeared = false
     @State private var startersAppeared = false
+    @State private var imageViewerImages: [ViewableImage] = []
+    @State private var imageViewerIndex: Int = 0
+    @State private var showImageViewer = false
 
     private var isEmptyState: Bool {
         viewModel.messages.isEmpty && !viewModel.isGenerating
@@ -32,6 +35,23 @@ struct ChatView: View {
         .navigationTitle(conversation.title)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
+        #if os(macOS)
+        .sheet(isPresented: $showImageViewer) {
+            ImageViewerOverlay(
+                images: imageViewerImages,
+                selectedIndex: $imageViewerIndex,
+                isPresented: $showImageViewer
+            )
+        }
+        #else
+        .fullScreenCover(isPresented: $showImageViewer) {
+            ImageViewerOverlay(
+                images: imageViewerImages,
+                selectedIndex: $imageViewerIndex,
+                isPresented: $showImageViewer
+            )
+        }
         #endif
         .task {
             loadUserProfile()
@@ -73,6 +93,11 @@ struct ChatView: View {
                                     userColor: Color(hex: viewModel.userBubbleColor) ?? OTheme.navy,
                                     onActionExecute: { action in
                                         viewModel.executeAction(action)
+                                    },
+                                    onImageViewerPresent: { images, index in
+                                        imageViewerImages = images
+                                        imageViewerIndex = index
+                                        showImageViewer = true
                                     },
                                     onSpeakToggle: { msg in
                                         viewModel.toggleSpeech(for: msg)

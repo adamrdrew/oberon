@@ -5,6 +5,7 @@ struct MessageBubble: View {
     let message: Message
     var userColor: Color = OTheme.navy
     var onActionExecute: ((RichAction) -> Void)?
+    var onImageViewerPresent: (([ViewableImage], Int) -> Void)?
     var onSpeakToggle: ((Message) -> Void)?
     var onCopy: ((Message) -> Void)?
     var isSpeaking: Bool = false
@@ -52,7 +53,7 @@ struct MessageBubble: View {
                 if !isUser && !message.richContent.isEmpty {
                     VStack(spacing: 10) {
                         ForEach(message.richContent) { content in
-                            RichContentCardView(content: content)
+                            RichContentCardView(content: content, onImageTap: onImageViewerPresent)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)

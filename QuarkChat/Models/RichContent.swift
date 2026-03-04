@@ -5,11 +5,13 @@ import Foundation
 enum RichContent: Codable, Identifiable, Sendable {
     case weather(WeatherData)
     case wikipedia(WikipediaData)
+    case images(ImageSearchData)
 
     var id: String {
         switch self {
         case .weather(let d): return "weather-\(d.locationName)"
         case .wikipedia(let d): return "wikipedia-\(d.title)"
+        case .images(let d): return "images-\(d.query)"
         }
     }
 }

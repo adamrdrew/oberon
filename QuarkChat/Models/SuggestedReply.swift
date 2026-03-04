@@ -35,4 +35,11 @@ extension SuggestedReply {
             SuggestedReply(text: "Related topics?"),
         ]
     }
+
+    static func forImageSearch() -> [SuggestedReply] {
+        [
+            SuggestedReply(text: "More images"),
+            SuggestedReply(text: "Tell me about this"),
+        ]
+    }
 }

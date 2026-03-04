@@ -2,6 +2,7 @@ import SwiftUI
 
 struct WikipediaCardView: View {
     let data: WikipediaData
+    var onImageTap: ((Int) -> Void)?
 
     @Environment(\.openURL) private var openURL
 
@@ -32,11 +33,9 @@ struct WikipediaCardView: View {
             if !data.images.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
-                        ForEach(data.images) { image in
+                        ForEach(Array(data.images.enumerated()), id: \.element.id) { index, image in
                             Button {
-                                if let url = URL(string: image.filePageURL), !image.filePageURL.isEmpty {
-                                    openURL(url)
-                                }
+                                onImageTap?(index)
                             } label: {
                                 AsyncImage(url: URL(string: image.imageURL)) { phase in
                                     switch phase {

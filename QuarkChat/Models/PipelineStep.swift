@@ -7,6 +7,7 @@ enum StepCategory: String, Codable, Sendable {
     case calculation
     case geoSearch
     case weather
+    case imageSearch
 
     var icon: String {
         switch self {
@@ -14,6 +15,7 @@ enum StepCategory: String, Codable, Sendable {
         case .calculation: return "function"
         case .geoSearch: return "map"
         case .weather: return "cloud.sun"
+        case .imageSearch: return "photo.on.rectangle.angled"
         }
     }
 }

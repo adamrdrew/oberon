@@ -94,6 +94,7 @@ final class ChatViewModel {
     private func buildTools(userProfile: UserProfile?) -> [any Tool] {
         return [
             WebSearchTool(),
+            ImageSearchTool(),
         ]
     }
 
