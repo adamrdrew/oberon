@@ -263,6 +263,7 @@ struct ConversationListView: View {
                 }
             }
         }
+        .safeAreaPadding(.top, 10)
     }
 
     // MARK: - Edit Mode List (multi-select)
@@ -284,6 +285,7 @@ struct ConversationListView: View {
                 }
             }
         }
+        .safeAreaPadding(.top, 10)
         #if os(iOS)
         .environment(\.editMode, .constant(.active))
         #endif
