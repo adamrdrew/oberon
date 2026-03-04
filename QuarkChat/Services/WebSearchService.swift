@@ -1,5 +1,6 @@
 import Foundation
-import FoundationModels
+import SwiftSoup
+import Reductio
 
 actor WebSearchService {
     struct SearchResult: Sendable {
@@ -8,7 +9,7 @@ actor WebSearchService {
         let url: String
     }
 
-    func search(query: String, maxResults: Int = 3) async -> [SearchResult] {
+    func search(query: String, maxResults: Int = 5) async -> [SearchResult] {
         let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
         guard let url = URL(string: "https://html.duckduckgo.com/html/?q=\(encoded)") else {
             return []
@@ -17,7 +18,7 @@ actor WebSearchService {
         do {
             var request = URLRequest(url: url)
             request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
-            request.timeoutInterval = 10
+            request.timeoutInterval = 5
 
             let (data, _) = try await URLSession.shared.data(for: request)
             guard let html = String(data: data, encoding: .utf8) else { return [] }
@@ -27,80 +28,62 @@ actor WebSearchService {
         }
     }
 
-    func fetchPageText(url urlString: String) async -> String? {
+    func fetchAndExtract(url urlString: String) async -> String? {
         guard let url = URL(string: urlString) else { return nil }
 
         do {
             var request = URLRequest(url: url)
-            request.timeoutInterval = 10
-            request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
-
-            let (data, _) = try await URLSession.shared.data(for: request)
-            guard let html = String(data: data, encoding: .utf8) else { return nil }
-            let text = extractTextContent(from: html)
-            return text.isEmpty ? nil : text
-        } catch {
-            return nil
-        }
-    }
-
-    func fetchAndSummarize(url urlString: String) async -> String? {
-        guard let url = URL(string: urlString) else { return nil }
-
-        do {
-            var request = URLRequest(url: url)
-            request.timeoutInterval = 10
+            request.timeoutInterval = 2
             request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
 
             let (data, _) = try await URLSession.shared.data(for: request)
             guard let html = String(data: data, encoding: .utf8) else { return nil }
 
-            let text = extractTextContent(from: html)
-            let truncated = String(text.prefix(2000))
+            let text = extractArticleText(from: html)
+            guard !text.isEmpty else { return nil }
 
-            let session = LanguageModelSession(
-                instructions: "Summarize the following text in 2-3 concise sentences."
-            )
-            let response = try await session.respond(to: truncated)
-            return response.content
+            // TextRank extractive summarization — pick the 5 most important sentences
+            let sentences = text.summarize(count: 5)
+            guard !sentences.isEmpty else { return nil }
+            return sentences.joined(separator: " ")
         } catch {
             return nil
         }
     }
+
+    // MARK: - DDG HTML Parsing (SwiftSoup)
 
     private func parseDuckDuckGoHTML(_ html: String, maxResults: Int) -> [SearchResult] {
-        var results: [SearchResult] = []
+        do {
+            let doc = try SwiftSoup.parse(html)
+            let resultDivs = try doc.select(".result")
+            var results: [SearchResult] = []
 
-        // Split on result class markers
-        let resultBlocks = html.components(separatedBy: "class=\"result__a\"")
+            for div in resultDivs.prefix(maxResults) {
+                guard let link = try div.select("a.result__a").first() else { continue }
+                let title = try link.text()
+                let rawURL = try link.attr("href")
+                let url = extractRealURL(from: rawURL)
 
-        for block in resultBlocks.dropFirst().prefix(maxResults) {
-            let title = extractBetween(block, start: ">", end: "</a>")
-                .flatMap { stripHTML($0) } ?? "No title"
+                var snippet = ""
+                if let snippetEl = try div.select("a.result__snippet").first() {
+                    snippet = try snippetEl.text()
+                } else if let snippetEl = try div.select(".result__snippet").first() {
+                    snippet = try snippetEl.text()
+                }
 
-            let snippet: String
-            if let snippetBlock = extractBetween(block, start: "class=\"result__snippet\"", end: "</a>") {
-                snippet = stripHTML(snippetBlock)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            } else if let snippetBlock = extractBetween(block, start: "class=\"result__snippet\">", end: "</") {
-                snippet = stripHTML(snippetBlock)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            } else {
-                snippet = ""
+                if !title.isEmpty {
+                    results.append(SearchResult(title: title, snippet: snippet, url: url))
+                }
             }
 
-            let rawURL = extractBetween(block, start: "href=\"", end: "\"") ?? ""
-            let url = extractRealURL(from: rawURL)
-
-            if !title.isEmpty {
-                results.append(SearchResult(title: title, snippet: snippet, url: url))
-            }
+            return results
+        } catch {
+            return []
         }
-
-        return results
     }
 
     private func extractRealURL(from rawURL: String) -> String {
-        // DuckDuckGo wraps URLs like //duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.com&rut=...
-        // Extract the actual destination from the uddg parameter
         if rawURL.contains("uddg=") {
             if let range = rawURL.range(of: "uddg=") {
                 let after = String(rawURL[range.upperBound...])
@@ -110,48 +93,55 @@ actor WebSearchService {
                 }
             }
         }
-        // If it's a protocol-relative URL, add https:
         if rawURL.hasPrefix("//") {
             return "https:" + rawURL
         }
         return rawURL
     }
 
-    private func extractBetween(_ text: String, start: String, end: String) -> String? {
-        guard let startRange = text.range(of: start) else { return nil }
-        let after = text[startRange.upperBound...]
-        guard let endRange = after.range(of: end) else { return nil }
-        return String(after[..<endRange.lowerBound])
+    // MARK: - Article Text Extraction (SwiftSoup)
+
+    private func extractArticleText(from html: String) -> String {
+        do {
+            let doc = try SwiftSoup.parse(html)
+
+            // Remove boilerplate elements
+            for selector in ["script", "style", "nav", "header", "footer", "aside", "form", "iframe", "noscript", ".nav", ".menu", ".sidebar", ".footer", ".header", ".ad", ".advertisement"] {
+                try doc.select(selector).remove()
+            }
+
+            // Try to find the main article content
+            let contentSelectors = ["article", "main", "[role=main]", ".article-body", ".post-content", ".entry-content"]
+            for selector in contentSelectors {
+                if let content = try doc.select(selector).first() {
+                    let text = try extractParagraphs(from: content)
+                    if text.count > 200 {
+                        return String(text.prefix(3000))
+                    }
+                }
+            }
+
+            // Fallback: extract all paragraphs from body
+            if let body = doc.body() {
+                let text = try extractParagraphs(from: body)
+                if !text.isEmpty {
+                    return String(text.prefix(3000))
+                }
+            }
+
+            return ""
+        } catch {
+            return ""
+        }
     }
 
-    private func stripHTML(_ text: String) -> String? {
-        var result = text
-        // Remove HTML tags
-        while let startRange = result.range(of: "<"),
-              let endRange = result[startRange.lowerBound...].range(of: ">") {
-            result.removeSubrange(startRange.lowerBound...endRange.lowerBound)
+    private func extractParagraphs(from element: Element) throws -> String {
+        let paragraphs = try element.select("p")
+        let texts = try paragraphs.array().compactMap { p -> String? in
+            let text = try p.text().trimmingCharacters(in: .whitespacesAndNewlines)
+            // Skip very short paragraphs (likely UI elements, not content)
+            return text.count > 40 ? text : nil
         }
-        // Decode common entities
-        result = result.replacingOccurrences(of: "&amp;", with: "&")
-        result = result.replacingOccurrences(of: "&lt;", with: "<")
-        result = result.replacingOccurrences(of: "&gt;", with: ">")
-        result = result.replacingOccurrences(of: "&quot;", with: "\"")
-        result = result.replacingOccurrences(of: "&#x27;", with: "'")
-        result = result.replacingOccurrences(of: "&nbsp;", with: " ")
-        return result.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    func extractTextContent(from html: String) -> String {
-        var text = html
-        // Remove script and style blocks
-        while let scriptStart = text.range(of: "<script", options: .caseInsensitive),
-              let scriptEnd = text[scriptStart.lowerBound...].range(of: "</script>", options: .caseInsensitive) {
-            text.removeSubrange(scriptStart.lowerBound...scriptEnd.upperBound)
-        }
-        while let styleStart = text.range(of: "<style", options: .caseInsensitive),
-              let styleEnd = text[styleStart.lowerBound...].range(of: "</style>", options: .caseInsensitive) {
-            text.removeSubrange(styleStart.lowerBound...styleEnd.upperBound)
-        }
-        return stripHTML(text) ?? text
+        return texts.joined(separator: " ")
     }
 }

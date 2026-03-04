@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		668DD63A2F579FFF001AFDA9 /* Oberon 3.icon in Resources */ = {isa = PBXBuildFile; fileRef = 668DD6392F579FFF001AFDA9 /* Oberon 3.icon */; };
 		A1B2C3D4E5F6A7B8C9D0E1F4 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6A7B8C9D0E1F3 /* MarkdownUI */; };
+		B1C2D3E4F5A6B7C8D9E0F1A4 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = B1C2D3E4F5A6B7C8D9E0F1A3 /* SwiftSoup */; };
+		C1D2E3F4A5B6C7D8E9F0A1B4 /* Reductio in Frameworks */ = {isa = PBXBuildFile; productRef = C1D2E3F4A5B6C7D8E9F0A1B3 /* Reductio */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +45,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1B2C3D4E5F6A7B8C9D0E1F4 /* MarkdownUI in Frameworks */,
+				B1C2D3E4F5A6B7C8D9E0F1A4 /* SwiftSoup in Frameworks */,
+				C1D2E3F4A5B6C7D8E9F0A1B4 /* Reductio in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -87,6 +91,8 @@
 			name = QuarkChat;
 			packageProductDependencies = (
 				A1B2C3D4E5F6A7B8C9D0E1F3 /* MarkdownUI */,
+				B1C2D3E4F5A6B7C8D9E0F1A3 /* SwiftSoup */,
+				C1D2E3F4A5B6C7D8E9F0A1B3 /* Reductio */,
 			);
 			productName = QuarkChat;
 			productReference = 662790CB2F551FBA004CCE7D /* QuarkChat.app */;
@@ -118,6 +124,8 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
+				B1C2D3E4F5A6B7C8D9E0F1A2 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
+				C1D2E3F4A5B6C7D8E9F0A1B2 /* XCRemoteSwiftPackageReference "Reductio" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 662790CC2F551FBA004CCE7D /* Products */;
@@ -441,6 +449,22 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		B1C2D3E4F5A6B7C8D9E0F1A2 /* XCRemoteSwiftPackageReference "SwiftSoup" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/scinfu/SwiftSoup";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+		C1D2E3F4A5B6C7D8E9F0A1B2 /* XCRemoteSwiftPackageReference "Reductio" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/fdzsergio/Reductio";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.7.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -448,6 +472,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1B2C3D4E5F6A7B8C9D0E1F2 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
 			productName = MarkdownUI;
+		};
+		B1C2D3E4F5A6B7C8D9E0F1A3 /* SwiftSoup */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B1C2D3E4F5A6B7C8D9E0F1A2 /* XCRemoteSwiftPackageReference "SwiftSoup" */;
+			productName = SwiftSoup;
+		};
+		C1D2E3F4A5B6C7D8E9F0A1B3 /* Reductio */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C1D2E3F4A5B6C7D8E9F0A1B2 /* XCRemoteSwiftPackageReference "Reductio" */;
+			productName = Reductio;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

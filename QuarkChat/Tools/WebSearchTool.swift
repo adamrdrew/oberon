@@ -17,14 +17,14 @@ struct WebSearchTool: Tool {
         let step = PipelineStep(category: .webSearch, label: "Searching the web")
         await ToolResultStore.shared.addPipelineStep(step)
 
-        let results = await searchService.search(query: arguments.query, maxResults: 3)
+        let results = await searchService.search(query: arguments.query, maxResults: 5)
 
         if results.isEmpty {
             await ToolResultStore.shared.failPipelineStep(id: step.id)
             return "No results found for '\(arguments.query)'. Try a different search."
         }
 
-        // Store citations for UI
+        // Store citations for all results
         let citations = results.compactMap { result -> Citation? in
             guard !result.url.isEmpty else { return nil }
             return Citation(title: result.title, url: result.url)
@@ -32,29 +32,72 @@ struct WebSearchTool: Tool {
         await ToolResultStore.shared.addCitations(citations)
         await ToolResultStore.shared.addSuggestedReplies(SuggestedReply.forWebSearch())
 
-        // Check for Wikipedia source and fetch rich card data
-        if let wikiResult = results.first(where: { isWikipediaURL($0.url) }),
-           let wikiTitle = extractWikipediaTitle(from: wikiResult.url) {
-            let baseURL = extractWikipediaBaseURL(from: wikiResult.url)
-            let wikiService = WikipediaService()
-            if let wikiData = await wikiService.fetchArticleData(title: wikiTitle, baseURL: baseURL) {
-                await ToolResultStore.shared.addRichContent([.wikipedia(wikiData)])
-            }
+        // Fan out: fetch all results in parallel
+        let summaries = await fetchAllResults(results)
+
+        // Store Wikipedia rich card if we got one
+        if let wikiData = summaries.compactMap({ $0.wikiData }).first {
+            await ToolResultStore.shared.addRichContent([.wikipedia(wikiData)])
         }
 
-        // Try to fetch and summarize the top result
-        if let topURL = results.first?.url, !topURL.isEmpty,
-           let summary = await searchService.fetchAndSummarize(url: topURL) {
-            let source = results.first?.title ?? "web"
-            await ToolResultStore.shared.completePipelineStep(id: step.id)
-            return "From \(source): \(summary)"
-        }
-
-        // Fallback: return snippets
         await ToolResultStore.shared.completePipelineStep(id: step.id)
-        return results.prefix(2).map { result in
-            "\(result.title): \(result.snippet)"
-        }.joined(separator: "\n")
+
+        // Build labeled multi-source result
+        let labeled = summaries.compactMap { entry -> String? in
+            guard let summary = entry.summary, !summary.isEmpty else { return nil }
+            return "From \(entry.title): \(summary)"
+        }
+
+        if labeled.isEmpty {
+            // Fallback to DDG snippets
+            return results.prefix(3).map { "\($0.title): \($0.snippet)" }.joined(separator: "\n")
+        }
+
+        return labeled.joined(separator: "\n\n")
+    }
+
+    // MARK: - Parallel Fan-Out
+
+    private struct FetchResult: Sendable {
+        let index: Int
+        let title: String
+        let summary: String?
+        let wikiData: WikipediaData?
+    }
+
+    private func fetchAllResults(_ results: [WebSearchService.SearchResult]) async -> [FetchResult] {
+        let service = searchService
+        let wikiService = WikipediaService()
+
+        return await withTaskGroup(of: FetchResult.self, returning: [FetchResult].self) { group in
+            for (index, result) in results.enumerated() {
+                let title = result.title
+                let url = result.url
+                let isWiki = isWikipediaURL(url)
+
+                group.addTask {
+                    if isWiki, let wikiTitle = extractWikipediaTitle(from: url) {
+                        let baseURL = extractWikipediaBaseURL(from: url)
+                        let data = await wikiService.fetchArticleData(title: wikiTitle, baseURL: baseURL)
+                        return FetchResult(
+                            index: index,
+                            title: title,
+                            summary: data?.extract,
+                            wikiData: data
+                        )
+                    } else {
+                        let summary = await service.fetchAndExtract(url: url)
+                        return FetchResult(index: index, title: title, summary: summary, wikiData: nil)
+                    }
+                }
+            }
+
+            var collected: [FetchResult] = []
+            for await result in group {
+                collected.append(result)
+            }
+            return collected.sorted { $0.index < $1.index }
+        }
     }
 
     // MARK: - Wikipedia Detection
