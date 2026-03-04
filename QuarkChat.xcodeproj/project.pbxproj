@@ -14,7 +14,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		662790CB2F551FBA004CCE7D /* QuarkChat.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuarkChat.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		662790CB2F551FBA004CCE7D /* Oberon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Oberon.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		668DD6392F579FFF001AFDA9 /* Oberon 3.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "Oberon 3.icon"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -65,7 +65,7 @@
 		662790CC2F551FBA004CCE7D /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				662790CB2F551FBA004CCE7D /* QuarkChat.app */,
+				662790CB2F551FBA004CCE7D /* Oberon.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,7 +95,7 @@
 				C1D2E3F4A5B6C7D8E9F0A1B3 /* Reductio */,
 			);
 			productName = QuarkChat;
-			productReference = 662790CB2F551FBA004CCE7D /* QuarkChat.app */;
+			productReference = 662790CB2F551FBA004CCE7D /* Oberon.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */

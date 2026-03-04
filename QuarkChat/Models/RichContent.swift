@@ -6,12 +6,16 @@ enum RichContent: Codable, Identifiable, Sendable {
     case weather(WeatherData)
     case wikipedia(WikipediaData)
     case images(ImageSearchData)
+    case videos(VideoSearchData)
+    case linkPreview(LinkPreviewData)
 
     var id: String {
         switch self {
         case .weather(let d): return "weather-\(d.locationName)"
         case .wikipedia(let d): return "wikipedia-\(d.title)"
         case .images(let d): return "images-\(d.query)"
+        case .videos(let d): return "videos-\(d.query)"
+        case .linkPreview(let d): return "linkPreview-\(d.url)"
         }
     }
 }

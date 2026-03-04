@@ -14,6 +14,11 @@ struct ImageSearchTool: Tool {
     }
 
     func call(arguments: Arguments) async throws -> String {
+        if await ToolResultStore.shared.hasToolPerformed("image_search") {
+            return "Image search already completed. Use the results provided."
+        }
+        await ToolResultStore.shared.markToolPerformed("image_search")
+
         let step = PipelineStep(category: .imageSearch, label: "Searching for images")
         await ToolResultStore.shared.addPipelineStep(step)
 

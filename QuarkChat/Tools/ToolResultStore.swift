@@ -11,11 +11,20 @@ actor ToolResultStore {
     private(set) var suggestedReplies: [SuggestedReply] = []
     private(set) var pipelineSteps: [PipelineStep] = []
 
-    /// Tracks whether web search has already run this turn (prevents double-search)
+    /// Tracks which tools have already run this turn (prevents looping)
     private(set) var webSearchPerformed: Bool = false
+    private var toolsPerformed: Set<String> = []
 
     func markWebSearchPerformed() {
         webSearchPerformed = true
+    }
+
+    func hasToolPerformed(_ name: String) -> Bool {
+        toolsPerformed.contains(name)
+    }
+
+    func markToolPerformed(_ name: String) {
+        toolsPerformed.insert(name)
     }
 
     func addCitations(_ items: [Citation]) {
@@ -74,6 +83,7 @@ actor ToolResultStore {
         suggestedReplies = []
         pipelineSteps = []
         webSearchPerformed = false
+        toolsPerformed = []
         return results
     }
 }

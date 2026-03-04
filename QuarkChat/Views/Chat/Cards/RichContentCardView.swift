@@ -23,6 +23,10 @@ struct RichContentCardView: View {
                 let viewables = data.images.map { ViewableImage(from: $0) }
                 onImageTap?(viewables, index)
             })
+        case .videos(let data):
+            VideoSearchCardView(data: data)
+        case .linkPreview(let data):
+            LinkPreviewCardView(data: data)
         }
     }
 }

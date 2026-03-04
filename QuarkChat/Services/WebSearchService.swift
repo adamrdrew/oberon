@@ -28,6 +28,56 @@ actor WebSearchService {
         }
     }
 
+    struct PageMetadata: Sendable {
+        let title: String?
+        let description: String?
+        let imageURL: String?
+        let siteName: String?
+        let summary: String
+    }
+
+    func fetchWithMetadata(url urlString: String) async -> PageMetadata? {
+        guard let url = URL(string: urlString) else { return nil }
+
+        do {
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 5
+            request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
+
+            let (data, _) = try await URLSession.shared.data(for: request)
+            guard let html = String(data: data, encoding: .utf8) else { return nil }
+
+            let og = extractOGMetadata(from: html)
+
+            let text = extractArticleText(from: html)
+            if text.isEmpty {
+                if og.title != nil || og.description != nil {
+                    return PageMetadata(
+                        title: og.title,
+                        description: og.description,
+                        imageURL: og.imageURL,
+                        siteName: og.siteName,
+                        summary: og.description ?? ""
+                    )
+                }
+                return nil
+            }
+
+            let sentences = text.summarize(count: 5)
+            let summary = sentences.isEmpty ? String(text.prefix(500)) : sentences.joined(separator: " ")
+
+            return PageMetadata(
+                title: og.title,
+                description: og.description,
+                imageURL: og.imageURL,
+                siteName: og.siteName,
+                summary: summary
+            )
+        } catch {
+            return nil
+        }
+    }
+
     func fetchAndExtract(url urlString: String) async -> String? {
         guard let url = URL(string: urlString) else { return nil }
 
@@ -143,5 +193,33 @@ actor WebSearchService {
             return text.count > 40 ? text : nil
         }
         return texts.joined(separator: " ")
+    }
+
+    // MARK: - OG Metadata Extraction
+
+    private struct OGData {
+        let title: String?
+        let description: String?
+        let imageURL: String?
+        let siteName: String?
+    }
+
+    private func extractOGMetadata(from html: String) -> OGData {
+        do {
+            let doc = try SwiftSoup.parse(html)
+
+            func ogContent(_ property: String) -> String? {
+                try? doc.select("meta[property=og:\(property)]").first()?.attr("content")
+            }
+
+            let title = ogContent("title") ?? (try? doc.title())
+            let description = ogContent("description")
+            let imageURL = ogContent("image")
+            let siteName = ogContent("site_name")
+
+            return OGData(title: title, description: description, imageURL: imageURL, siteName: siteName)
+        } catch {
+            return OGData(title: nil, description: nil, imageURL: nil, siteName: nil)
+        }
     }
 }

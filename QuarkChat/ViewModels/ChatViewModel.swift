@@ -95,6 +95,8 @@ final class ChatViewModel {
         return [
             WebSearchTool(),
             ImageSearchTool(),
+            VideoSearchTool(),
+            URLReaderTool(),
         ]
     }
 

@@ -42,4 +42,18 @@ extension SuggestedReply {
             SuggestedReply(text: "Tell me about this"),
         ]
     }
+
+    static func forVideoSearch() -> [SuggestedReply] {
+        [
+            SuggestedReply(text: "More videos"),
+            SuggestedReply(text: "Tell me about this"),
+        ]
+    }
+
+    static func forURLReader() -> [SuggestedReply] {
+        [
+            SuggestedReply(text: "Summarize the key points"),
+            SuggestedReply(text: "What else is interesting here?"),
+        ]
+    }
 }

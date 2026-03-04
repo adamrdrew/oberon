@@ -8,6 +8,8 @@ enum StepCategory: String, Codable, Sendable {
     case geoSearch
     case weather
     case imageSearch
+    case videoSearch
+    case urlExtraction
 
     var icon: String {
         switch self {
@@ -16,6 +18,8 @@ enum StepCategory: String, Codable, Sendable {
         case .geoSearch: return "map"
         case .weather: return "cloud.sun"
         case .imageSearch: return "photo.on.rectangle.angled"
+        case .videoSearch: return "play.rectangle"
+        case .urlExtraction: return "link"
         }
     }
 }
