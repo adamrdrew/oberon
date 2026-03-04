@@ -193,51 +193,31 @@ final class ChatService {
 
     // MARK: - Utility Sessions
 
-    struct GreetingResult {
-        var headline: String
-        var subtitle: String
-    }
+    // MARK: - Conversation Starters
 
     @Generable
-    struct GeneratedGreeting {
-        @Guide(description: "Short greeting like 'Hi Adam' or 'Good evening'. 2-4 words max. MUST NOT be a question.")
-        var headline: String
-
-        @Guide(description: "Friendly, neutral statement like 'Ready when you are.' or 'Let's get started.' One short sentence. MUST NOT be a question. MUST NOT end with a question mark.")
-        var subtitle: String
+    struct GeneratedStarters {
+        @Guide(description: "Exactly 3 conversation starters (5-8 words each). These suggest NEW topics the user might enjoy based on their interests — never repeat or summarize their past conversations. Each is a short phrase a user would type to start a chat.")
+        var starters: [String]
     }
 
-    func generateGreeting(userName: String?) async -> GreetingResult {
+    func generateStarters(recentTopics: [String]) async -> [String] {
+        guard !recentTopics.isEmpty else { return [] }
+
         let session = LanguageModelSession(
-            instructions: "You generate greeting text for a chat app. NEVER ask a question. NEVER use a question mark. Output a short greeting and a friendly neutral statement."
+            instructions: "You suggest conversation topics for a chat app. Output short phrases a user would type. NEVER use a question mark."
         )
 
-        let hour = Calendar.current.component(.hour, from: Date())
-        let timeOfDay = hour < 12 ? "morning" : (hour < 17 ? "afternoon" : "evening")
-
-        let nameStr = (userName?.isEmpty == false) ? userName! : "there"
-
-        let prompt = "Generate a greeting for \(nameStr) in the \(timeOfDay). The headline should be a short greeting with their name like 'Hey \(nameStr)' or 'Good \(timeOfDay), \(nameStr)'. The subtitle should be a friendly, upbeat, neutral statement — NOT a question. Examples of good subtitles: 'Ready for whatever you need.', 'Let's see what we can get into.', 'Here whenever you need me.'"
+        let prompt = "The user's recent interests include: \(recentTopics.joined(separator: ", ")). Suggest 3 NEW conversation topics they might enjoy — do NOT repeat or summarize their past chats. Each should be a fresh, short phrase (5-8 words) like 'Latest discoveries in space exploration' or 'Best weekend hiking trails nearby'."
 
         do {
-            let response = try await session.respond(
-                to: prompt,
-                generating: GeneratedGreeting.self
-            )
-            return GreetingResult(
-                headline: response.content.headline.trimmingCharacters(in: .whitespacesAndNewlines),
-                subtitle: response.content.subtitle
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                    .replacingOccurrences(of: "?", with: ".")
-            )
-        } catch {
-            let fallbackHeadline: String
-            switch timeOfDay {
-            case "morning": fallbackHeadline = "Good morning, \(nameStr)!"
-            case "afternoon": fallbackHeadline = "Good afternoon, \(nameStr)!"
-            default: fallbackHeadline = "Good evening, \(nameStr)!"
+            let response = try await session.respond(to: prompt, generating: GeneratedStarters.self)
+            return response.content.starters.map {
+                $0.trimmingCharacters(in: .whitespacesAndNewlines)
+                    .replacingOccurrences(of: "?", with: "")
             }
-            return GreetingResult(headline: fallbackHeadline, subtitle: "Ready for whatever you need.")
+        } catch {
+            return []
         }
     }
 

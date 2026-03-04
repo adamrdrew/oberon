@@ -11,6 +11,7 @@ struct ChatView: View {
     @State private var userProfile: UserProfile?
     @State private var hasScrolledToBottom = false
     @State private var greetingAppeared = false
+    @State private var startersAppeared = false
 
     private var isEmptyState: Bool {
         viewModel.messages.isEmpty && !viewModel.isGenerating
@@ -201,8 +202,47 @@ struct ChatView: View {
                         .opacity(greetingAppeared ? 1 : 0)
                 }
             }
+
         }
         .animation(reduceMotion ? .none : .spring(duration: 0.5, bounce: 0.3), value: greetingAppeared)
+        .overlay(alignment: .bottom) {
+            // Conversation starters — overlaid below greeting so they never shift it
+            VStack(spacing: 6) {
+                ForEach(Array(viewModel.conversationStarters.enumerated()), id: \.offset) { index, starter in
+                    Button {
+                        viewModel.inputText = starter
+                        Task { await viewModel.sendMessage() }
+                    } label: {
+                        Text(starter)
+                            .font(OTheme.caption)
+                            .foregroundStyle(OTheme.tertiary)
+                    }
+                    .buttonStyle(.plain)
+                    .multilineTextAlignment(.center)
+                    .opacity(startersAppeared ? 1 : 0)
+                    .offset(y: startersAppeared ? 0 : 6)
+                    .animation(
+                        reduceMotion ? .none : .easeOut(duration: 0.4).delay(Double(index) * 0.1),
+                        value: startersAppeared
+                    )
+                }
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .alignmentGuide(.bottom) { d in d[.top] - 32 }
+            .onChange(of: viewModel.conversationStarters) {
+                guard !viewModel.conversationStarters.isEmpty else {
+                    startersAppeared = false
+                    return
+                }
+                if reduceMotion {
+                    startersAppeared = true
+                } else {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        startersAppeared = true
+                    }
+                }
+            }
+        }
         .onAppear {
             guard !reduceMotion else {
                 greetingAppeared = true

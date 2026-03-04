@@ -29,6 +29,7 @@ final class ChatViewModel {
     var greetingSubtitle: String?
     var showGreeting: Bool = true
     var scrollTargetMessageID: UUID?
+    var conversationStarters: [String] = []
 
     // MARK: - Voice Mode
     var isVoiceMode: Bool = false
@@ -43,6 +44,7 @@ final class ChatViewModel {
     private var conversation: Conversation?
     private var modelContext: ModelContext?
     private var userProfile: UserProfile?
+    private var greetingTask: Task<Void, Never>?
 
     /// Suggested replies from the latest assistant message
     var currentSuggestedReplies: [SuggestedReply]? {
@@ -77,12 +79,15 @@ final class ChatViewModel {
 
         if messages.isEmpty {
             showGreeting = true
-            setFallbackGreeting()
-            Task {
-                await generateGreeting()
+            conversationStarters = []
+            setGreeting()
+            greetingTask?.cancel()
+            greetingTask = Task {
+                await loadConversationStarters()
             }
         } else {
             showGreeting = false
+            conversationStarters = []
         }
     }
 
@@ -101,18 +106,93 @@ final class ChatViewModel {
         messages = conversation.sortedMessages
     }
 
-    private func setFallbackGreeting() {
-        let hour = Calendar.current.component(.hour, from: Date())
-        let timeOfDay = hour < 12 ? "morning" : (hour < 17 ? "afternoon" : "evening")
+    private func setGreeting() {
         let name = (userProfile?.name.isEmpty == false) ? userProfile!.name : "there"
-        greetingHeadline = "Good \(timeOfDay), \(name)!"
-        greetingSubtitle = "Ready for whatever you need."
+        let hour = Calendar.current.component(.hour, from: Date())
+
+        let morningHeadlines = [
+            "Good morning, \(name)!",
+            "Morning, \(name)!",
+            "Rise and shine, \(name)!",
+            "Hey \(name), good morning!",
+            "Top of the morning, \(name)!",
+            "Bright and early, \(name)!",
+            "Hello, \(name)!",
+            "Welcome back, \(name)!",
+        ]
+
+        let afternoonHeadlines = [
+            "Good afternoon, \(name)!",
+            "Hey \(name)!",
+            "Hi there, \(name)!",
+            "What's up, \(name)!",
+            "Welcome back, \(name)!",
+            "Hello, \(name)!",
+            "Howdy, \(name)!",
+            "Hey hey, \(name)!",
+        ]
+
+        let eveningHeadlines = [
+            "Good evening, \(name)!",
+            "Evening, \(name)!",
+            "Hey \(name)!",
+            "Welcome back, \(name)!",
+            "Hi there, \(name)!",
+            "Hello, \(name)!",
+            "Hey hey, \(name)!",
+            "What's up, \(name)!",
+        ]
+
+        let subtitles = [
+            "Ready for whatever you need.",
+            "Let's see what we can do.",
+            "What are we getting into today.",
+            "Here whenever you need me.",
+            "Let's get started.",
+            "At your service.",
+            "Standing by and ready.",
+            "Let's make it a good one.",
+            "What's on your mind.",
+            "Ready when you are.",
+            "Let's do this.",
+            "Fire away.",
+            "All ears.",
+            "What can I help with.",
+            "Back at it.",
+            "Let's pick up where we left off.",
+        ]
+
+        let headlines: [String]
+        if hour < 12 {
+            headlines = morningHeadlines
+        } else if hour < 17 {
+            headlines = afternoonHeadlines
+        } else {
+            headlines = eveningHeadlines
+        }
+
+        greetingHeadline = headlines.randomElement()!
+        greetingSubtitle = subtitles.randomElement()!
     }
 
-    private func generateGreeting() async {
-        let result = await chatService.generateGreeting(userName: userProfile?.name)
-        greetingHeadline = result.headline
-        greetingSubtitle = result.subtitle
+    private func loadConversationStarters() async {
+        let recentTopics = fetchRecentTopics()
+        guard !recentTopics.isEmpty else { return }
+        let starters = await chatService.generateStarters(recentTopics: recentTopics)
+        guard !Task.isCancelled else { return }
+        conversationStarters = starters
+    }
+
+    private func fetchRecentTopics() -> [String] {
+        guard let modelContext else { return [] }
+        var descriptor = FetchDescriptor<Conversation>(
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 3
+        guard let conversations = try? modelContext.fetch(descriptor) else { return [] }
+        return conversations
+            .map(\.title)
+            .filter { $0 != "New Chat" && !$0.isEmpty }
     }
 
     func sendMessage() async {
@@ -124,6 +204,7 @@ final class ChatViewModel {
         if isVoiceMode { SoundEffectService.playSent() }
         errorMessage = nil
         showGreeting = false
+        conversationStarters = []
 
         // Insert conversation into SwiftData on first message
         if conversation.modelContext == nil {
