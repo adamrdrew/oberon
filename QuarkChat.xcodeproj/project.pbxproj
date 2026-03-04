@@ -190,6 +190,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuarkChat/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Oberon;
+				INFOPLIST_KEY_CFBundleName = Oberon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Oberon uses the microphone for voice input.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Oberon uses speech recognition for voice input.";
@@ -209,7 +210,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = adamrdrew.QuarkChat;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Oberon;
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
 				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
 				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
@@ -261,6 +262,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuarkChat/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Oberon;
+				INFOPLIST_KEY_CFBundleName = Oberon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Oberon uses the microphone for voice input.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Oberon uses speech recognition for voice input.";
@@ -280,7 +282,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 26.2;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = adamrdrew.QuarkChat;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Oberon;
 				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
 				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
 				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
