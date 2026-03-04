@@ -42,8 +42,8 @@ struct ImageViewerOverlay: View {
 
     @State private var selectedIndex: Int = 0
     @State private var scale: CGFloat = 1.0
+    @State private var scaleAtGestureStart: CGFloat = 1.0
     @State private var showChrome = true
-    @GestureState private var magnification: CGFloat = 1.0
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -115,7 +115,7 @@ struct ImageViewerOverlay: View {
     private func imagePageView(_ image: ViewableImage?) -> some View {
         if let image {
             RemoteImageView(url: image.imageURL, contentMode: .fit)
-                .scaleEffect(scale * magnification)
+                .scaleEffect(scale)
                 .gesture(pinchGesture)
                 .gesture(doubleTapGesture)
                 .id(image.id)
@@ -161,6 +161,7 @@ struct ImageViewerOverlay: View {
     private func navigatePrevious() {
         if selectedIndex > 0 {
             scale = 1.0
+            scaleAtGestureStart = 1.0
             withAnimation(reduceMotion ? .none : .spring(duration: 0.3, bounce: 0.15)) {
                 selectedIndex -= 1
             }
@@ -170,6 +171,7 @@ struct ImageViewerOverlay: View {
     private func navigateNext() {
         if selectedIndex < images.count - 1 {
             scale = 1.0
+            scaleAtGestureStart = 1.0
             withAnimation(reduceMotion ? .none : .spring(duration: 0.3, bounce: 0.15)) {
                 selectedIndex += 1
             }
@@ -228,29 +230,31 @@ struct ImageViewerOverlay: View {
 
     private var pinchGesture: some Gesture {
         MagnifyGesture()
-            .updating($magnification) { value, state, _ in
-                state = value.magnification
+            .onChanged { value in
+                scale = scaleAtGestureStart * value.magnification
             }
-            .onEnded { value in
-                let newScale = scale * value.magnification
-                if newScale < 1.0 {
+            .onEnded { _ in
+                if scale < 1.0 {
                     withAnimation(.spring(duration: 0.3, bounce: 0.15)) {
                         scale = 1.0
                     }
-                } else {
+                } else if scale > 4.0 {
                     withAnimation(.spring(duration: 0.3, bounce: 0.15)) {
-                        scale = min(newScale, 4.0)
+                        scale = 4.0
                     }
                 }
+                scaleAtGestureStart = scale
             }
     }
 
     private var doubleTapGesture: some Gesture {
         TapGesture(count: 2)
             .onEnded {
+                let target: CGFloat = scale > 1.0 ? 1.0 : 2.0
                 withAnimation(.spring(duration: 0.35, bounce: 0.2)) {
-                    scale = scale > 1.0 ? 1.0 : 2.0
+                    scale = target
                 }
+                scaleAtGestureStart = target
             }
     }
 }
