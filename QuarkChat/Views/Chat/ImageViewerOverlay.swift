@@ -102,34 +102,11 @@ struct ImageViewerOverlay: View {
     @ViewBuilder
     private func imagePageView(_ image: ViewableImage?) -> some View {
         if let image {
-            AsyncImage(url: URL(string: image.imageURL)) { phase in
-                switch phase {
-                case .success(let img):
-                    img
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .scaleEffect(scale * magnification)
-                        .gesture(pinchGesture)
-                        .gesture(doubleTapGesture)
-                        .transition(.opacity)
-                case .failure:
-                    VStack(spacing: 12) {
-                        Image(systemName: "photo.badge.exclamationmark")
-                            .font(.system(size: 40))
-                            .foregroundStyle(.white.opacity(0.5))
-                        Text("Failed to load")
-                            .font(OTheme.caption)
-                            .foregroundStyle(.white.opacity(0.5))
-                    }
-                case .empty:
-                    ProgressView()
-                        .tint(.white)
-                        .scaleEffect(1.2)
-                @unknown default:
-                    Color.clear
-                }
-            }
-            .id(image.id)
+            RemoteImageView(url: image.imageURL, contentMode: .fit)
+                .scaleEffect(scale * magnification)
+                .gesture(pinchGesture)
+                .gesture(doubleTapGesture)
+                .id(image.id)
         }
     }
 
