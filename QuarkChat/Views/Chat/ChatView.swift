@@ -15,9 +15,7 @@ struct ChatView: View {
     @State private var hasScrolledToBottom = false
     @State private var greetingAppeared = false
     @State private var startersAppeared = false
-    @State private var imageViewerImages: [ViewableImage] = []
-    @State private var imageViewerIndex: Int = 0
-    @State private var showImageViewer = false
+    @State private var imageViewerItem: ImageViewerItem?
 
     private var isEmptyState: Bool {
         viewModel.messages.isEmpty && !viewModel.isGenerating
@@ -40,20 +38,12 @@ struct ChatView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         #if os(macOS)
-        .sheet(isPresented: $showImageViewer) {
-            ImageViewerOverlay(
-                images: imageViewerImages,
-                selectedIndex: $imageViewerIndex,
-                isPresented: $showImageViewer
-            )
+        .sheet(item: $imageViewerItem) { item in
+            ImageViewerOverlay(images: item.images, initialIndex: item.initialIndex)
         }
         #else
-        .fullScreenCover(isPresented: $showImageViewer) {
-            ImageViewerOverlay(
-                images: imageViewerImages,
-                selectedIndex: $imageViewerIndex,
-                isPresented: $showImageViewer
-            )
+        .fullScreenCover(item: $imageViewerItem) { item in
+            ImageViewerOverlay(images: item.images, initialIndex: item.initialIndex)
         }
         #endif
         .task {
@@ -99,9 +89,7 @@ struct ChatView: View {
                                     },
                                     onImageViewerPresent: { images, index in
                                         logger.info("🖼️ ChatView: presenting viewer, \(images.count) images, index=\(index)")
-                                        imageViewerImages = images
-                                        imageViewerIndex = index
-                                        showImageViewer = true
+                                        imageViewerItem = ImageViewerItem(images: images, initialIndex: index)
                                     },
                                     onSpeakToggle: { msg in
                                         viewModel.toggleSpeech(for: msg)

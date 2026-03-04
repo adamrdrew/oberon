@@ -26,17 +26,26 @@ struct ViewableImage: Identifiable {
     }
 }
 
+// MARK: - Presentation Item
+
+struct ImageViewerItem: Identifiable {
+    let id = UUID()
+    let images: [ViewableImage]
+    let initialIndex: Int
+}
+
 // MARK: - ImageViewerOverlay
 
 struct ImageViewerOverlay: View {
     let images: [ViewableImage]
-    @Binding var selectedIndex: Int
-    @Binding var isPresented: Bool
+    let initialIndex: Int
 
+    @State private var selectedIndex: Int = 0
     @State private var scale: CGFloat = 1.0
     @State private var showChrome = true
     @GestureState private var magnification: CGFloat = 1.0
 
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -54,7 +63,7 @@ struct ImageViewerOverlay: View {
                     }
                 }
 
-            // Navigation arrows (macOS + iPad)
+            // Navigation arrows (macOS)
             #if os(macOS)
             navigationArrows
             #endif
@@ -92,8 +101,11 @@ struct ImageViewerOverlay: View {
             return .handled
         }
         .onKeyPress(.escape) {
-            isPresented = false
+            dismiss()
             return .handled
+        }
+        .onAppear {
+            selectedIndex = initialIndex
         }
     }
 
@@ -172,7 +184,7 @@ struct ImageViewerOverlay: View {
             // Top bar
             HStack {
                 Button {
-                    isPresented = false
+                    dismiss()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 28))

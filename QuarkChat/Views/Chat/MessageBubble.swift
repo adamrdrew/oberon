@@ -26,7 +26,7 @@ struct MessageBubble: View {
         HStack {
             if isUser { Spacer(minLength: 60) }
 
-            VStack(alignment: isUser ? .trailing : .leading, spacing: 14) {
+            VStack(alignment: isUser ? .trailing : .leading, spacing: 20) {
                 if !isUser && !message.pipelineSteps.isEmpty {
                     PipelineStatusView(steps: message.pipelineSteps, isCompact: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -51,7 +51,7 @@ struct MessageBubble: View {
 
                 // Rich content cards
                 if !isUser && !message.richContent.isEmpty {
-                    VStack(spacing: 10) {
+                    VStack(spacing: 30) {
                         ForEach(message.richContent) { content in
                             RichContentCardView(content: content, onImageTap: onImageViewerPresent)
                         }

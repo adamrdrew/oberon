@@ -40,7 +40,8 @@ struct ImageSearchCardView: View {
             LazyVGrid(columns: columns, spacing: 6) {
                 ForEach(Array(data.images.enumerated()), id: \.element.id) { index, image in
                     RemoteImageView(url: image.thumbnail)
-                        .frame(height: 100)
+                        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 100, maxHeight: 100)
+                        .clipped()
                         .clipShape(.rect(cornerRadius: OTheme.cornerRadiusSmall))
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -59,6 +60,7 @@ struct ImageSearchCardView: View {
             }
         }
         .padding(14)
+        .clipShape(.rect(cornerRadius: OTheme.cornerRadiusCard))
         .glassEffect(
             .regular.tint(OTheme.accent.opacity(0.05)),
             in: .rect(cornerRadius: OTheme.cornerRadiusCard)
