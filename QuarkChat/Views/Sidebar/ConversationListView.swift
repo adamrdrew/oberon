@@ -242,7 +242,7 @@ struct ConversationListView: View {
                                     appState.selectedConversation = nil
                                 }
                                 modelContext.delete(conversation)
-                                try? modelContext.save()
+                                modelContext.safeSave()
                             }
                         } label: {
                             Label("Delete", systemImage: "trash")
@@ -301,7 +301,7 @@ struct ConversationListView: View {
         if userProfile == nil {
             let newProfile = UserProfile()
             modelContext.insert(newProfile)
-            try? modelContext.save()
+            modelContext.safeSave()
             userProfile = newProfile
         }
     }

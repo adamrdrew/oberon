@@ -15,10 +15,10 @@ struct WebSearchTool: Tool {
 
     func call(arguments: Arguments) async throws -> String {
         // Prevent multiple searches per turn — one fan-out is enough
-        if await ToolResultStore.shared.webSearchPerformed {
+        if await ToolResultStore.shared.hasToolPerformed(name) {
             return "Search already completed. Use the results provided."
         }
-        await ToolResultStore.shared.markWebSearchPerformed()
+        await ToolResultStore.shared.markToolPerformed(name)
 
         let step = PipelineStep(category: .webSearch, label: "Searching the web")
         await ToolResultStore.shared.addPipelineStep(step)

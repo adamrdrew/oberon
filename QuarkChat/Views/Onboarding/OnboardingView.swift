@@ -328,7 +328,7 @@ struct OnboardingView: View {
         } else {
             let newProfile = UserProfile()
             modelContext.insert(newProfile)
-            try? modelContext.save()
+            modelContext.safeSave()
             profile = newProfile
             viewModel.load(from: newProfile)
         }
@@ -337,7 +337,7 @@ struct OnboardingView: View {
     private func completeOnboarding() {
         viewModel.save(context: modelContext)
         profile?.hasCompletedOnboarding = true
-        try? modelContext.save()
+        modelContext.safeSave()
         dismiss()
     }
 }

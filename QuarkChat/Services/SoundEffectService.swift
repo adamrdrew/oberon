@@ -39,11 +39,7 @@ enum SoundEffectService {
     // MARK: - Audio Session
 
     private static func activatePlaybackSession() {
-        #if os(iOS)
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .duckOthers])
-        try? session.setActive(true)
-        #endif
+        AudioSessionHelper.activatePlaybackSession()
     }
 
     // MARK: - Playback

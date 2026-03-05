@@ -55,18 +55,7 @@ final class SpeechService {
         }
         print("[Speech] startRecording: authorized (speech + mic)")
 
-        // Configure audio session — .playAndRecord so sound effects and TTS
-        // can coexist without category switches.
-        #if os(iOS)
-        let audioSession = AVAudioSession.sharedInstance()
-        do {
-            try audioSession.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .duckOthers])
-            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
-        } catch {
-            print("[Speech] startRecording: audio session error: \(error)")
-            return
-        }
-        #endif
+        AudioSessionHelper.activatePlaybackSession()
 
         let engine = AVAudioEngine()
         let request = SFSpeechAudioBufferRecognitionRequest()

@@ -33,32 +33,14 @@ final class TTSService: NSObject {
         let cleanText = stripMarkdown(text)
         guard !cleanText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
 
-        // Configure audio session — use .playAndRecord so we don't fight
-        // with SpeechService / SoundEffectService over the session category.
-        #if os(iOS)
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .duckOthers])
-        try? session.setActive(true)
-        #endif
+        AudioSessionHelper.activatePlaybackSession()
 
         let utterance = AVSpeechUtterance(string: cleanText)
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate
         utterance.pitchMultiplier = 1.0
         utterance.volume = 1.0
 
-        // Use saved voice if set, otherwise best available
-        if !selectedVoiceID.isEmpty, let voice = AVSpeechSynthesisVoice(identifier: selectedVoiceID) {
-            utterance.voice = voice
-        } else {
-            let lang = Locale.current.language.languageCode?.identifier ?? "en"
-            if let premium = AVSpeechSynthesisVoice.speechVoices()
-                .first(where: { $0.language.hasPrefix(lang) && $0.quality == .premium }) {
-                utterance.voice = premium
-            } else if let enhanced = AVSpeechSynthesisVoice.speechVoices()
-                .first(where: { $0.language.hasPrefix(lang) && $0.quality == .enhanced }) {
-                utterance.voice = enhanced
-            }
-        }
+        utterance.voice = VoiceSelectionHelper.voice(for: selectedVoiceID)
 
         currentMessageID = messageID
         isSpeaking = true

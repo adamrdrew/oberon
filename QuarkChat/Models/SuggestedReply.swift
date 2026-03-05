@@ -14,21 +14,6 @@ struct SuggestedReply: Codable, Identifiable, Sendable {
 
 extension SuggestedReply {
 
-    static func forWeather() -> [SuggestedReply] {
-        [
-            SuggestedReply(text: "Tomorrow's forecast?"),
-            SuggestedReply(text: "This weekend?"),
-            SuggestedReply(text: "Should I bring an umbrella?"),
-        ]
-    }
-
-    static func forGeoSearch() -> [SuggestedReply] {
-        [
-            SuggestedReply(text: "Get directions"),
-            SuggestedReply(text: "Anything closer?"),
-        ]
-    }
-
     static func forWebSearch() -> [SuggestedReply] {
         [
             SuggestedReply(text: "Tell me more"),

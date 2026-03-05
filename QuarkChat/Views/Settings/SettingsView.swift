@@ -204,7 +204,7 @@ struct SettingsView: View {
                     Button("Save") {
                         viewModel.stopPreview()
                         viewModel.save(context: modelContext)
-                        try? modelContext.save()
+                        modelContext.safeSave()
                         dismiss()
                     }
                     .buttonStyle(.glassProminent)
@@ -277,7 +277,7 @@ struct SettingsView: View {
             profile.hasCompletedOnboarding = false
         }
 
-        try? modelContext.save()
+        modelContext.safeSave()
 
         // Reset theme to default
         ThemeManager.shared.applyTheme(id: "oberon")

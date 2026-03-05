@@ -4,7 +4,6 @@ import SwiftUI
 import SwiftData
 import FoundationModels
 import MapKit
-import AVFoundation
 #if canImport(UIKit)
 import UIKit
 #elseif canImport(AppKit)
@@ -23,7 +22,6 @@ final class ChatViewModel {
     var inputText: String = ""
     var showTypingIndicator: Bool = false
     var errorMessage: String?
-    var isUserScrolledUp: Bool = false
     var userBubbleColor: String = "#1E2D4D"
     var greetingHeadline: String?
     var greetingSubtitle: String?
@@ -216,7 +214,7 @@ final class ChatViewModel {
         userMessage.conversation = conversation
         modelContext.insert(userMessage)
         conversation.updatedAt = Date()
-        try? modelContext.save()
+        modelContext.safeSave()
         messages.append(userMessage)
         scrollTargetMessageID = userMessage.id
 
@@ -315,7 +313,7 @@ final class ChatViewModel {
             // Save transcript to conversation for persistence
             conversation.transcriptData = chatService.transcriptData()
             conversation.updatedAt = Date()
-            try? modelContext.save()
+            modelContext.safeSave()
             messages.append(assistantMessage)
         }
 
@@ -335,7 +333,7 @@ final class ChatViewModel {
         }
 
         // Auto-execute primary action after message is persisted
-        if let primaryAction = toolResults.actions.first, primaryAction.autoExecutes {
+        if let primaryAction = toolResults.actions.first {
             executeAction(primaryAction)
         }
 
@@ -343,7 +341,7 @@ final class ChatViewModel {
         if conversation.title == "New Chat" {
             let title = await chatService.generateTitle(firstUserMessage: text)
             conversation.title = title
-            try? modelContext.save()
+            modelContext.safeSave()
         }
 
         isGenerating = false
@@ -377,10 +375,7 @@ final class ChatViewModel {
         SoundEffectService.stopThinking()
         Haptics.tap()
 
-        // Release the audio session so other apps can use audio hardware
-        #if os(iOS)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        #endif
+        AudioSessionHelper.deactivateSession()
     }
 
     private func enableVoiceMode() {
@@ -388,13 +383,7 @@ final class ChatViewModel {
         voiceModeStatus = .listening
         Haptics.tap()
 
-        // Set up audio session once for the entire voice mode lifecycle.
-        // All services use the same category/mode/options → no reconfigurations.
-        #if os(iOS)
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .duckOthers])
-        try? session.setActive(true)
-        #endif
+        AudioSessionHelper.activatePlaybackSession()
 
         SoundEffectService.playListening()
 
@@ -493,7 +482,4 @@ final class ChatViewModel {
         chatService.currentStreamText
     }
 
-    var serviceIsGenerating: Bool {
-        chatService.isGenerating
-    }
 }

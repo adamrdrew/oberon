@@ -1,7 +1,4 @@
 import SwiftUI
-import os
-
-private let logger = Logger(subsystem: "com.adamdrew.oberon", category: "ImageViewer")
 
 // MARK: - ViewableImage (universal wrapper)
 

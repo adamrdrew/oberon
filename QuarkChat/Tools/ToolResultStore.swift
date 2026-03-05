@@ -12,12 +12,7 @@ actor ToolResultStore {
     private(set) var pipelineSteps: [PipelineStep] = []
 
     /// Tracks which tools have already run this turn (prevents looping)
-    private(set) var webSearchPerformed: Bool = false
     private var toolsPerformed: Set<String> = []
-
-    func markWebSearchPerformed() {
-        webSearchPerformed = true
-    }
 
     func hasToolPerformed(_ name: String) -> Bool {
         toolsPerformed.contains(name)
@@ -61,6 +56,30 @@ actor ToolResultStore {
         }
     }
 
+    /// Runs a tool's work inside a managed pipeline step, handling completion/failure automatically.
+    /// Returns nil if the tool was already performed this turn (caller should return early message).
+    func withPipelineStep(
+        toolName: String,
+        category: StepCategory,
+        label: String,
+        work: (UUID) async throws -> String
+    ) async -> String? {
+        guard !hasToolPerformed(toolName) else { return nil }
+        markToolPerformed(toolName)
+
+        let step = PipelineStep(category: category, label: label)
+        addPipelineStep(step)
+
+        do {
+            let result = try await work(step.id)
+            completePipelineStep(id: step.id)
+            return result
+        } catch {
+            failPipelineStep(id: step.id)
+            return nil
+        }
+    }
+
     struct ToolResults: Sendable {
         let citations: [Citation]
         let actions: [RichAction]
@@ -82,7 +101,6 @@ actor ToolResultStore {
         richContent = []
         suggestedReplies = []
         pipelineSteps = []
-        webSearchPerformed = false
         toolsPerformed = []
         return results
     }

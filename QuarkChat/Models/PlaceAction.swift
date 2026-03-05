@@ -15,14 +15,6 @@ struct PlaceAction: Codable, Identifiable, Sendable {
     let latitude: Double?
     let longitude: Double?
 
-    var icon: String {
-        switch type {
-        case .directions: return "arrow.triangle.turn.up.right.diamond.fill"
-        case .call: return "phone.fill"
-        case .openWebsite: return "safari.fill"
-        }
-    }
-
     init(type: PlaceActionType, label: String, placeName: String, urlString: String, latitude: Double? = nil, longitude: Double? = nil) {
         self.id = UUID()
         self.type = type

@@ -25,7 +25,7 @@ final class ConversationListViewModel {
             appState.selectedConversation = nil
         }
         modelContext.delete(conversation)
-        try? modelContext.save()
+        modelContext.safeSave()
     }
 
     func deleteConversations(at offsets: IndexSet, from conversations: [Conversation], modelContext: ModelContext, appState: AppState) {

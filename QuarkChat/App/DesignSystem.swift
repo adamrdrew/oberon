@@ -18,15 +18,6 @@ enum OTheme {
     @MainActor static var teal: Color       { theme.teal }
     @MainActor static var navy: Color       { theme.navy }
     @MainActor static var signalRed: Color  { theme.signalRed }
-    @MainActor static var cream: Color      { theme.cream }
-
-    // MARK: - Fixed Stripe Colors (computed from active theme band colors)
-
-    @MainActor static var stripeOrange: Color { theme.band1 }
-    @MainActor static var stripeTeal: Color   { theme.band2 }
-    @MainActor static var stripeNavy: Color   { theme.band3 }
-    @MainActor static var stripeRed: Color    { theme.band4 }
-    @MainActor static var stripeCream: Color  { theme.band5 }
 
     @MainActor static var defaultStripeColors: [Color] { theme.stripeColors }
 

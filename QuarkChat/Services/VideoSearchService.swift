@@ -5,7 +5,7 @@ actor VideoSearchService {
     func search(query: String, maxResults: Int = 6) async -> [VideoSearchData.VideoResult] {
         let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
 
-        guard let token = await fetchVQDToken(query: encoded) else { return [] }
+        guard let token = await DDGTokenService.fetchVQDToken(query: encoded, mediaType: .videos) else { return [] }
 
         guard let url = URL(string: "https://duckduckgo.com/v.js?l=us-en&o=json&q=\(encoded)&vqd=\(token)") else {
             return []
@@ -44,40 +44,6 @@ actor VideoSearchService {
     }
 
     // MARK: - Private
-
-    private func fetchVQDToken(query: String) async -> String? {
-        guard let url = URL(string: "https://duckduckgo.com/?q=\(query)&iax=videos&ia=videos") else {
-            return nil
-        }
-
-        do {
-            var request = URLRequest(url: url)
-            request.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15", forHTTPHeaderField: "User-Agent")
-            request.timeoutInterval = 5
-
-            let (data, _) = try await URLSession.shared.data(for: request)
-            guard let html = String(data: data, encoding: .utf8) else { return nil }
-
-            let patterns = [
-                #"vqd=([^&"']+)"#,
-                #"vqd='([^']+)'"#,
-                #"vqd="([^"]+)""#,
-            ]
-
-            for pattern in patterns {
-                if let regex = try? NSRegularExpression(pattern: pattern),
-                   let match = regex.firstMatch(in: html, range: NSRange(html.startIndex..., in: html)),
-                   let range = Range(match.range(at: 1), in: html) {
-                    let token = String(html[range])
-                    if !token.isEmpty { return token }
-                }
-            }
-
-            return nil
-        } catch {
-            return nil
-        }
-    }
 
     private struct DDGVideoResponse: Decodable {
         let results: [DDGVideoResult]?

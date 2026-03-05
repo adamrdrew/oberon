@@ -26,10 +26,6 @@ struct RichAction: Codable, Identifiable, Sendable {
         }
     }
 
-    var autoExecutes: Bool {
-        true
-    }
-
     nonisolated init(
         type: RichActionType,
         label: String,

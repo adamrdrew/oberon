@@ -68,31 +68,12 @@ final class SettingsViewModel {
 
     func previewVoice(_ voiceID: String) {
         previewSynthesizer.stopSpeaking(at: .immediate)
-
-        #if os(iOS)
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .duckOthers])
-        try? session.setActive(true)
-        #endif
+        AudioSessionHelper.activatePlaybackSession()
 
         let utterance = AVSpeechUtterance(string: "Hello, I am Oberon")
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate
         utterance.volume = 1.0
-
-        if voiceID.isEmpty {
-            // Auto: use best available (same logic as TTSService)
-            let lang = Locale.current.language.languageCode?.identifier ?? "en"
-            if let premium = AVSpeechSynthesisVoice.speechVoices()
-                .first(where: { $0.language.hasPrefix(lang) && $0.quality == .premium }) {
-                utterance.voice = premium
-            } else if let enhanced = AVSpeechSynthesisVoice.speechVoices()
-                .first(where: { $0.language.hasPrefix(lang) && $0.quality == .enhanced }) {
-                utterance.voice = enhanced
-            }
-        } else if let voice = AVSpeechSynthesisVoice(identifier: voiceID) {
-            utterance.voice = voice
-        }
-
+        utterance.voice = VoiceSelectionHelper.voice(for: voiceID)
         previewSynthesizer.speak(utterance)
     }
 
