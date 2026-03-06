@@ -44,9 +44,13 @@ struct ImageViewerOverlay: View {
     @State private var panOffset: CGSize = .zero
     @State private var lastPanOffset: CGSize = .zero
     @State private var showChrome = true
+    @State private var isPinching = false
 
-    // iOS dismiss state
+    // iOS-only state
     #if os(iOS)
+    private enum DragMode { case none, paging, dismissing, panning }
+    @State private var dragMode: DragMode = .none
+    @State private var pageDragOffset: CGFloat = 0
     @State private var dismissOffset: CGFloat = 0
     #endif
 
@@ -132,76 +136,134 @@ struct ImageViewerOverlay: View {
         }
     }
 
-    // MARK: - iOS Image Pager
+    // MARK: - iOS Image Pager (custom HStack)
 
     #if os(iOS)
     private var iOSImagePager: some View {
-        TabView(selection: $selectedIndex) {
-            ForEach(Array(images.enumerated()), id: \.element.id) { index, image in
-                zoomableImagePage(image)
-                    .tag(index)
+        GeometryReader { geo in
+            HStack(spacing: 0) {
+                ForEach(Array(images.enumerated()), id: \.element.id) { index, image in
+                    RemoteImageView(url: image.imageURL, contentMode: .fit)
+                        .scaleEffect(index == selectedIndex ? scale : 1.0)
+                        .offset(index == selectedIndex ? panOffset : .zero)
+                        .frame(width: geo.size.width, height: geo.size.height)
+                        .contentShape(Rectangle())
+                        .onTapGesture(count: 2) { handleDoubleTap() }
+                        .onTapGesture { toggleChrome() }
+                }
             }
-        }
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        .scrollDisabled(isZoomed)
-        .offset(y: dismissOffset)
-        .scaleEffect(dismissScale)
-        .simultaneousGesture(dismissGesture)
-        .onChange(of: selectedIndex) { _, _ in
-            resetZoom()
+            .offset(x: -CGFloat(selectedIndex) * geo.size.width + pageDragOffset)
+            .offset(y: dismissOffset)
+            .scaleEffect(dismissScale)
+            .gesture(unifiedDragGesture(pageWidth: geo.size.width))
+            .simultaneousGesture(pinchGesture)
         }
     }
 
-    @ViewBuilder
-    private func zoomableImagePage(_ image: ViewableImage) -> some View {
-        RemoteImageView(url: image.imageURL, contentMode: .fit)
-            .scaleEffect(scale)
-            .offset(panOffset)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .contentShape(Rectangle())
-            .onTapGesture(count: 2) { handleDoubleTap() }
-            .onTapGesture { toggleChrome() }
-            .gesture(pinchGesture)
-            .simultaneousGesture(panGesture)
-    }
-
-    private var dismissGesture: some Gesture {
-        DragGesture(minimumDistance: 15)
+    private func unifiedDragGesture(pageWidth: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 8)
             .onChanged { value in
-                guard !isZoomed else { return }
-                // Only respond to predominantly vertical drags
-                guard abs(value.translation.height) > abs(value.translation.width) else {
-                    if dismissOffset != 0 {
-                        withAnimation(.spring(duration: 0.2)) { dismissOffset = 0 }
+                guard !isPinching else { return }
+                // Lock direction on first event (minimumDistance ensures enough movement)
+                if dragMode == .none {
+                    if isZoomed {
+                        dragMode = .panning
+                    } else if abs(value.translation.width) >= abs(value.translation.height) {
+                        dragMode = .paging
+                    } else {
+                        dragMode = .dismissing
                     }
-                    return
                 }
-                let vertical = value.translation.height
-                if vertical > 0 {
-                    dismissOffset = vertical
-                } else {
-                    dismissOffset = vertical * 0.3 // resistance for upward drag
-                }
-                // Hide chrome during drag
-                if showChrome && abs(vertical) > 20 {
-                    withAnimation(.easeOut(duration: 0.15)) { showChrome = false }
+
+                switch dragMode {
+                case .paging:
+                    var translation = value.translation.width
+                    // Resistance at edges
+                    if (selectedIndex == 0 && translation > 0) ||
+                       (selectedIndex == images.count - 1 && translation < 0) {
+                        translation *= 0.3
+                    }
+                    pageDragOffset = translation
+
+                case .dismissing:
+                    let vertical = value.translation.height
+                    dismissOffset = vertical > 0 ? vertical : vertical * 0.3
+                    if showChrome && abs(vertical) > 20 {
+                        withAnimation(.easeOut(duration: 0.15)) { showChrome = false }
+                    }
+
+                case .panning:
+                    panOffset = CGSize(
+                        width: lastPanOffset.width + value.translation.width,
+                        height: lastPanOffset.height + value.translation.height
+                    )
+
+                case .none:
+                    break
                 }
             }
             .onEnded { value in
-                guard !isZoomed else { return }
-                let translation = value.translation.height
-                let predicted = value.predictedEndTranslation.height
-                if translation > 120 || predicted > 500 {
-                    dismiss()
-                } else {
-                    withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
-                        dismissOffset = 0
-                    }
-                    if !showChrome {
-                        withAnimation(.spring(duration: 0.25, bounce: 0.1)) {
-                            showChrome = true
+                let mode = dragMode
+                dragMode = .none
+
+                switch mode {
+                case .paging:
+                    let threshold = pageWidth * 0.25
+                    let velocity = value.predictedEndTranslation.width
+                    if value.translation.width < -threshold || velocity < -500 {
+                        // Next page
+                        if selectedIndex < images.count - 1 {
+                            resetZoom()
+                            withAnimation(.spring(duration: 0.35, bounce: 0.15)) {
+                                selectedIndex += 1
+                                pageDragOffset = 0
+                            }
+                        } else {
+                            withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
+                                pageDragOffset = 0
+                            }
+                        }
+                    } else if value.translation.width > threshold || velocity > 500 {
+                        // Previous page
+                        if selectedIndex > 0 {
+                            resetZoom()
+                            withAnimation(.spring(duration: 0.35, bounce: 0.15)) {
+                                selectedIndex -= 1
+                                pageDragOffset = 0
+                            }
+                        } else {
+                            withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
+                                pageDragOffset = 0
+                            }
+                        }
+                    } else {
+                        // Snap back
+                        withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
+                            pageDragOffset = 0
                         }
                     }
+
+                case .dismissing:
+                    let translation = value.translation.height
+                    let predicted = value.predictedEndTranslation.height
+                    if translation > 120 || predicted > 500 {
+                        dismiss()
+                    } else {
+                        withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
+                            dismissOffset = 0
+                        }
+                        if !showChrome {
+                            withAnimation(.spring(duration: 0.25, bounce: 0.1)) {
+                                showChrome = true
+                            }
+                        }
+                    }
+
+                case .panning:
+                    lastPanOffset = panOffset
+
+                case .none:
+                    break
                 }
             }
     }
@@ -280,12 +342,10 @@ struct ImageViewerOverlay: View {
     }
 
     private func resetZoom() {
-        withAnimation(.spring(duration: 0.25)) {
-            scale = 1.0
-            scaleAtGestureStart = 1.0
-            panOffset = .zero
-            lastPanOffset = .zero
-        }
+        scale = 1.0
+        scaleAtGestureStart = 1.0
+        panOffset = .zero
+        lastPanOffset = .zero
     }
 
     // MARK: - Chrome
@@ -349,9 +409,11 @@ struct ImageViewerOverlay: View {
     private var pinchGesture: some Gesture {
         MagnifyGesture()
             .onChanged { value in
+                isPinching = true
                 scale = scaleAtGestureStart * value.magnification
             }
             .onEnded { _ in
+                isPinching = false
                 if scale < 1.0 {
                     withAnimation(.spring(duration: 0.3, bounce: 0.15)) {
                         scale = 1.0
@@ -367,6 +429,8 @@ struct ImageViewerOverlay: View {
             }
     }
 
+    // macOS-only pan gesture (iOS uses unified drag)
+    #if os(macOS)
     private var panGesture: some Gesture {
         DragGesture()
             .onChanged { value in
@@ -381,6 +445,7 @@ struct ImageViewerOverlay: View {
                 lastPanOffset = panOffset
             }
     }
+    #endif
 
     private func handleDoubleTap() {
         if scale > 1.05 {
