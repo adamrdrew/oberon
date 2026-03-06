@@ -37,6 +37,12 @@ struct ConversationListView: View {
         return "User"
     }
 
+    #if os(iOS)
+    private var isPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
+    #endif
+
     var body: some View {
         VStack(spacing: 0) {
             sidebarHeader
@@ -53,7 +59,17 @@ struct ConversationListView: View {
             sidebarFooter
         }
         #if os(iOS)
-        .toolbar(.hidden, for: .navigationBar)
+        .toolbar(isPad ? .automatic : .hidden, for: .navigationBar)
+        .toolbar {
+            if isPad {
+                ToolbarItem(placement: .topBarLeading) {
+                    Text("Oberon")
+                        .font(.system(size: 24, weight: .bold, design: .monospaced))
+                        .foregroundStyle(OTheme.primary)
+                        .fixedSize()
+                }
+            }
+        }
         #endif
         .alert("Delete Conversations", isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) { }
@@ -86,16 +102,18 @@ struct ConversationListView: View {
     private var sidebarHeader: some View {
         VStack(spacing: 0) {
             #if os(iOS)
-            // App branding
-            HStack {
-                Text("Oberon")
-                    .font(.system(size: 24, weight: .bold, design: .monospaced))
-                    .foregroundStyle(OTheme.primary)
-                Spacer()
+            // App branding — on iPad, this is in the toolbar instead (traffic light avoidance)
+            if !isPad {
+                HStack {
+                    Text("Oberon")
+                        .font(.system(size: 24, weight: .bold, design: .monospaced))
+                        .foregroundStyle(OTheme.primary)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 12)
             #endif
 
             StripeAccentView()
