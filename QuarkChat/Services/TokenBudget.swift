@@ -4,7 +4,8 @@ import FoundationModels
 enum TokenBudget {
     // MARK: - Compaction
 
-    static let compactionThreshold = 2800  // estimated tokens before compaction
+    static let compactionThreshold = 2800    // Foundation Models: ~4K context
+    static let mlxCompactionThreshold = 16000 // Qwen3-4B: 32K context, compact at ~50%
 
     // MARK: - Token Estimation
 

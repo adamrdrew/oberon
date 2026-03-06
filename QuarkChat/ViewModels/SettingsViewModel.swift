@@ -13,6 +13,7 @@ final class SettingsViewModel {
     var favoriteColorHex: String = "#1E2D4D"
     var selectedThemeID: String = "oberon"
     var selectedVoiceID: String = ""
+    var selectedModelBackend: ModelBackendType = .foundation
 
     private var profile: UserProfile?
     private var previewSynthesizer = AVSpeechSynthesizer()
@@ -51,6 +52,7 @@ final class SettingsViewModel {
         self.responsePreference = profile.responsePreference
         self.favoriteColorHex = profile.favoriteColorHex
         self.selectedVoiceID = profile.selectedVoiceID
+        self.selectedModelBackend = ModelBackendType(rawValue: profile.selectedModelBackend) ?? .foundation
         // Use ThemeManager as source of truth (profile may be stale if .id() rebuild interfered)
         self.selectedThemeID = ThemeManager.shared.currentTheme.id
     }
@@ -64,6 +66,7 @@ final class SettingsViewModel {
         profile.favoriteColorHex = favoriteColorHex
         profile.themeID = selectedThemeID
         profile.selectedVoiceID = selectedVoiceID
+        profile.selectedModelBackend = selectedModelBackend.rawValue
     }
 
     func previewVoice(_ voiceID: String) {

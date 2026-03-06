@@ -9,6 +9,7 @@ class Conversation {
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
     var transcriptData: Data?
+    var modelBackend: String = "foundation"
 
     @Relationship(deleteRule: .cascade, inverse: \Message.conversation)
     var messages: [Message]?

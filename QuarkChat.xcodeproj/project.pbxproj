@@ -11,6 +11,9 @@
 		A1B2C3D4E5F6A7B8C9D0E1F4 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6A7B8C9D0E1F3 /* MarkdownUI */; };
 		B1C2D3E4F5A6B7C8D9E0F1A4 /* SwiftSoup in Frameworks */ = {isa = PBXBuildFile; productRef = B1C2D3E4F5A6B7C8D9E0F1A3 /* SwiftSoup */; };
 		C1D2E3F4A5B6C7D8E9F0A1B4 /* Reductio in Frameworks */ = {isa = PBXBuildFile; productRef = C1D2E3F4A5B6C7D8E9F0A1B3 /* Reductio */; };
+		D1E2F3A4B5C6D7E8F9A0B1C4 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = D1E2F3A4B5C6D7E8F9A0B1C3 /* MLXLLM */; };
+		D1E2F3A4B5C6D7E8F9A0B1C6 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = D1E2F3A4B5C6D7E8F9A0B1C5 /* MLXLMCommon */; };
+		D1E2F3A4B5C6D7E8F9A0B1C8 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = D1E2F3A4B5C6D7E8F9A0B1C7 /* MLX */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -63,6 +66,9 @@
 				A1B2C3D4E5F6A7B8C9D0E1F4 /* MarkdownUI in Frameworks */,
 				B1C2D3E4F5A6B7C8D9E0F1A4 /* SwiftSoup in Frameworks */,
 				C1D2E3F4A5B6C7D8E9F0A1B4 /* Reductio in Frameworks */,
+				D1E2F3A4B5C6D7E8F9A0B1C4 /* MLXLLM in Frameworks */,
+				D1E2F3A4B5C6D7E8F9A0B1C6 /* MLXLMCommon in Frameworks */,
+				D1E2F3A4B5C6D7E8F9A0B1C8 /* MLX in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -118,6 +124,9 @@
 				A1B2C3D4E5F6A7B8C9D0E1F3 /* MarkdownUI */,
 				B1C2D3E4F5A6B7C8D9E0F1A3 /* SwiftSoup */,
 				C1D2E3F4A5B6C7D8E9F0A1B3 /* Reductio */,
+				D1E2F3A4B5C6D7E8F9A0B1C3 /* MLXLLM */,
+				D1E2F3A4B5C6D7E8F9A0B1C5 /* MLXLMCommon */,
+				D1E2F3A4B5C6D7E8F9A0B1C7 /* MLX */,
 			);
 			productName = QuarkChat;
 			productReference = 662790CB2F551FBA004CCE7D /* Oberon.app */;
@@ -178,6 +187,7 @@
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
 				B1C2D3E4F5A6B7C8D9E0F1A2 /* XCRemoteSwiftPackageReference "SwiftSoup" */,
 				C1D2E3F4A5B6C7D8E9F0A1B2 /* XCRemoteSwiftPackageReference "Reductio" */,
+				D1E2F3A4B5C6D7E8F9A0B1C2 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 662790CC2F551FBA004CCE7D /* Products */;
@@ -599,6 +609,14 @@
 				minimumVersion = 1.7.0;
 			};
 		};
+		D1E2F3A4B5C6D7E8F9A0B1C2 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ml-explore/mlx-swift-lm";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 2.30.3;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -616,6 +634,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C1D2E3F4A5B6C7D8E9F0A1B2 /* XCRemoteSwiftPackageReference "Reductio" */;
 			productName = Reductio;
+		};
+		D1E2F3A4B5C6D7E8F9A0B1C3 /* MLXLLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D1E2F3A4B5C6D7E8F9A0B1C2 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLLM;
+		};
+		D1E2F3A4B5C6D7E8F9A0B1C5 /* MLXLMCommon */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D1E2F3A4B5C6D7E8F9A0B1C2 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLMCommon;
+		};
+		D1E2F3A4B5C6D7E8F9A0B1C7 /* MLX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D1E2F3A4B5C6D7E8F9A0B1C2 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLX;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

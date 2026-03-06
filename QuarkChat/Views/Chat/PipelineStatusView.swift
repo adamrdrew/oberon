@@ -19,6 +19,7 @@ struct PipelineStatusView: View {
         case .imageSearch: return OTheme.accent.opacity(0.8)
         case .videoSearch: return OTheme.signalRed.opacity(0.8)
         case .urlExtraction: return OTheme.teal.opacity(0.9)
+        case .wikipedia: return OTheme.accent.opacity(0.7)
         }
     }
 

@@ -142,6 +142,22 @@ struct ChatView: View {
                                 StreamingMessageView(text: viewModel.serviceStreamText)
                             }
 
+                            if viewModel.isModelThinking {
+                                ThinkingIndicator()
+                                    .transition(
+                                        reduceMotion
+                                            ? .opacity
+                                            : .asymmetric(
+                                                insertion: .opacity,
+                                                removal: .opacity
+                                            )
+                                    )
+                                    .animation(
+                                        reduceMotion ? .none : .easeInOut(duration: 0.2),
+                                        value: viewModel.isModelThinking
+                                    )
+                            }
+
                             if let error = viewModel.errorMessage {
                                 ErrorMessageView(message: error)
                             }

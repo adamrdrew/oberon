@@ -64,15 +64,21 @@ final class ChatViewModel {
         ttsService.selectedVoiceID = userProfile?.selectedVoiceID ?? ""
         loadMessages()
 
+        // Set backend type from user preference (default: foundation)
+        let backendStr = userProfile?.selectedModelBackend ?? ModelBackendType.foundation.rawValue
+        chatService.backendType = ModelBackendType(rawValue: backendStr) ?? .foundation
+
         // Build tools with user context injected
-        let tools = buildTools(userProfile: userProfile)
+        let tools = buildTools(userProfile: userProfile, backendType: chatService.backendType)
+        let toolDefinitions = Self.buildToolDefinitions(backendType: chatService.backendType)
 
         // Initialize persistent session with tools
-        let instructions = PromptAssembler.buildInstructions(userProfile: userProfile)
+        let instructions = PromptAssembler.buildInstructions(userProfile: userProfile, backendType: chatService.backendType)
         chatService.initializeSession(
             transcriptData: conversation.transcriptData,
             instructions: instructions,
-            tools: tools
+            tools: tools,
+            toolDefinitions: toolDefinitions
         )
 
         if messages.isEmpty {
@@ -89,13 +95,89 @@ final class ChatViewModel {
         }
     }
 
-    private func buildTools(userProfile: UserProfile?) -> [any Tool] {
-        return [
+    private func buildTools(userProfile: UserProfile?, backendType: ModelBackendType) -> [any Tool] {
+        var tools: [any Tool] = [
             WebSearchTool(),
             ImageSearchTool(),
             VideoSearchTool(),
             URLReaderTool(),
         ]
+
+        if backendType == .mlx {
+            tools.append(WikipediaTool())
+        }
+
+        // Register executors in ToolRegistry for MLX backend
+        Task {
+            let registry = ToolRegistry.shared
+            await registry.clear()
+
+            await registry.register(name: "web_search") { args in
+                let query = args["query"] as? String ?? ""
+                let tool = WebSearchTool()
+                return try await tool.call(arguments: .init(query: query))
+            }
+            await registry.register(name: "image_search") { args in
+                let query = args["query"] as? String ?? ""
+                let tool = ImageSearchTool()
+                return try await tool.call(arguments: .init(query: query))
+            }
+            await registry.register(name: "video_search") { args in
+                let query = args["query"] as? String ?? ""
+                let tool = VideoSearchTool()
+                return try await tool.call(arguments: .init(query: query))
+            }
+            await registry.register(name: "read_url") { args in
+                let url = args["url"] as? String ?? ""
+                let tool = URLReaderTool()
+                return try await tool.call(arguments: .init(url: url))
+            }
+            if backendType == .mlx {
+                await registry.register(name: "wikipedia") { args in
+                    let topic = args["topic"] as? String ?? ""
+                    let tool = WikipediaTool()
+                    return try await tool.call(arguments: .init(topic: topic))
+                }
+            }
+        }
+
+        return tools
+    }
+
+    /// Build backend-agnostic tool definitions for MLX system prompt.
+    private static func buildToolDefinitions(backendType: ModelBackendType) -> [ToolDefinition] {
+        var definitions = [
+            ToolDefinition(
+                name: "web_search",
+                description: "Search the web for current information, news, facts, or anything you don't know.",
+                parameters: [.init(name: "query", type: "string", description: "Search query", required: true)]
+            ),
+            ToolDefinition(
+                name: "image_search",
+                description: "Search for images on the web.",
+                parameters: [.init(name: "query", type: "string", description: "Image search query", required: true)]
+            ),
+            ToolDefinition(
+                name: "video_search",
+                description: "Search for videos on the web.",
+                parameters: [.init(name: "query", type: "string", description: "Video search query", required: true)]
+            ),
+            ToolDefinition(
+                name: "read_url",
+                description: "Read and extract content from a URL.",
+                parameters: [.init(name: "url", type: "string", description: "The URL to read", required: true)]
+            ),
+        ]
+
+        if backendType == .mlx {
+            definitions.append(ToolDefinition(
+                name: "wikipedia",
+                description: "Look up a topic on Wikipedia to show the user a rich article card.",
+                parameters: [.init(name: "topic", type: "string", description: "The topic to look up", required: true)]
+            ))
+        }
+
+        return definitions
     }
 
     private func loadMessages() {
@@ -206,6 +288,7 @@ final class ChatViewModel {
         // Insert conversation into SwiftData on first message
         if conversation.modelContext == nil {
             modelContext.insert(conversation)
+            conversation.modelBackend = chatService.backendType.rawValue
         }
 
         // Persist user message
@@ -222,7 +305,7 @@ final class ChatViewModel {
 
         // Check compaction before sending
         if chatService.needsCompaction {
-            let instructions = PromptAssembler.buildInstructions(userProfile: userProfile)
+            let instructions = PromptAssembler.buildInstructions(userProfile: userProfile, backendType: chatService.backendType)
             await chatService.compactTranscript(instructions: instructions)
         }
 
@@ -248,7 +331,7 @@ final class ChatViewModel {
             switch error {
             case .exceededContextWindowSize:
                 // Reactive fallback: force compaction and retry
-                let instructions = PromptAssembler.buildInstructions(userProfile: userProfile)
+                let instructions = PromptAssembler.buildInstructions(userProfile: userProfile, backendType: chatService.backendType)
                 await chatService.compactTranscript(instructions: instructions)
                 do {
                     responseText = try await chatService.streamResponse(prompt: text)
@@ -292,6 +375,9 @@ final class ChatViewModel {
         let richContentJSON = encodeJSON(toolResults.richContent)
         let suggestedRepliesJSON = encodeJSON(toolResults.suggestedReplies)
 
+        // Fetch transcript data before synchronous transaction block
+        let transcriptSnapshot = await chatService.transcriptData()
+
         // Clear streaming state and append final message without animation
         var noAnimation = Transaction(animation: .none)
         noAnimation.disablesAnimations = true
@@ -310,8 +396,7 @@ final class ChatViewModel {
             assistantMessage.conversation = conversation
             modelContext.insert(assistantMessage)
 
-            // Save transcript to conversation for persistence
-            conversation.transcriptData = chatService.transcriptData()
+            conversation.transcriptData = transcriptSnapshot
             conversation.updatedAt = Date()
             modelContext.safeSave()
             messages.append(assistantMessage)
@@ -480,6 +565,10 @@ final class ChatViewModel {
     // Observe chat service state for UI updates
     var serviceStreamText: String {
         chatService.currentStreamText
+    }
+
+    var isModelThinking: Bool {
+        chatService.isModelThinking
     }
 
 }

@@ -9,7 +9,13 @@ struct OnboardingView: View {
     @State private var viewModel = SettingsViewModel()
     @State private var profile: UserProfile?
 
-    private let totalPages = 4
+    private let totalPages = 5
+
+    private var isMLXDownloading: Bool {
+        if case .downloading = MLXModelManager.shared.state { return true }
+        if case .loading = MLXModelManager.shared.state { return true }
+        return false
+    }
 
     var body: some View {
         NavigationStack {
@@ -23,7 +29,8 @@ struct OnboardingView: View {
                         case 0: welcomePage
                         case 1: aboutYouPage
                         case 2: personalizePage
-                        case 3: allSetPage
+                        case 3: modelChoicePage
+                        case 4: allSetPage
                         default: EmptyView()
                         }
                     }
@@ -224,7 +231,56 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Page 3: All Set
+    // MARK: - Page 3: Model Choice
+
+    private var modelChoicePage: some View {
+        VStack(spacing: 24) {
+            VStack(spacing: 8) {
+                Text("Choose a Model")
+                    .font(OTheme.displayLarge)
+                    .foregroundStyle(OTheme.primary)
+                Text("Pick what powers Oberon.")
+                    .font(OTheme.bodySmall)
+                    .foregroundStyle(OTheme.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(spacing: 0) {
+                ModelOptionRow(
+                    type: .foundation,
+                    isSelected: viewModel.selectedModelBackend == .foundation,
+                    isAvailable: true
+                ) {
+                    Haptics.selection()
+                    viewModel.selectedModelBackend = .foundation
+                }
+
+                Divider().padding(.leading, 16)
+
+                ModelOptionRow(
+                    type: .mlx,
+                    isSelected: viewModel.selectedModelBackend == .mlx,
+                    isAvailable: true
+                ) {
+                    Haptics.selection()
+                    viewModel.selectedModelBackend = .mlx
+                }
+            }
+            .background(.ultraThinMaterial, in: .rect(cornerRadius: OTheme.cornerRadiusCard))
+
+            // Show detail description for selected model
+            Text(viewModel.selectedModelBackend.detailDescription)
+                .font(OTheme.bodySmall)
+                .foregroundStyle(OTheme.tertiary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            if viewModel.selectedModelBackend == .mlx {
+                ModelDownloadView()
+            }
+        }
+    }
+
+    // MARK: - Page 4: All Set
 
     private var allSetPage: some View {
         VStack(spacing: 24) {
@@ -289,7 +345,10 @@ struct OnboardingView: View {
                 }
                 .buttonStyle(.glassProminent)
                 .font(OTheme.label)
-                .disabled(page == 1 && viewModel.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .disabled(
+                    (page == 1 && viewModel.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    || (page == 3 && isMLXDownloading)
+                )
             } else {
                 Button("Get Started") {
                     completeOnboarding()

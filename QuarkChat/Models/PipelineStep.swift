@@ -10,6 +10,7 @@ enum StepCategory: String, Codable, Sendable {
     case imageSearch
     case videoSearch
     case urlExtraction
+    case wikipedia
 
     var icon: String {
         switch self {
@@ -20,6 +21,7 @@ enum StepCategory: String, Codable, Sendable {
         case .imageSearch: return "photo.on.rectangle.angled"
         case .videoSearch: return "play.rectangle"
         case .urlExtraction: return "link"
+        case .wikipedia: return "book.closed"
         }
     }
 }

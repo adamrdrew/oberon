@@ -12,6 +12,12 @@ struct SettingsView: View {
     @State private var originalThemeID: String = "oberon"
     @State private var showDeleteConfirmation = false
 
+    private var isMLXDownloading: Bool {
+        if case .downloading = MLXModelManager.shared.state { return true }
+        if case .loading = MLXModelManager.shared.state { return true }
+        return false
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -38,6 +44,37 @@ struct SettingsView: View {
                             }
                             .padding(.horizontal, 4)
                             .padding(.vertical, 4)
+                        }
+                    }
+
+                    // MARK: - Model
+
+                    settingsSection("Model") {
+                        VStack(spacing: 0) {
+                            ModelOptionRow(
+                                type: .foundation,
+                                isSelected: viewModel.selectedModelBackend == .foundation,
+                                isAvailable: appState.isModelAvailable
+                            ) {
+                                Haptics.selection()
+                                viewModel.selectedModelBackend = .foundation
+                            }
+
+                            Divider().padding(.leading, 16)
+
+                            ModelOptionRow(
+                                type: .mlx,
+                                isSelected: viewModel.selectedModelBackend == .mlx,
+                                isAvailable: true
+                            ) {
+                                Haptics.selection()
+                                viewModel.selectedModelBackend = .mlx
+                            }
+                        }
+                        .background(.ultraThinMaterial, in: .rect(cornerRadius: OTheme.cornerRadiusCard))
+
+                        if viewModel.selectedModelBackend == .mlx {
+                            ModelDownloadView()
                         }
                     }
 
@@ -192,6 +229,7 @@ struct SettingsView: View {
             } message: {
                 Text("This will delete all conversations and reset your profile. This cannot be undone.")
             }
+            .interactiveDismissDisabled(isMLXDownloading)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -199,6 +237,7 @@ struct SettingsView: View {
                         ThemeManager.shared.applyTheme(id: originalThemeID)
                         dismiss()
                     }
+                    .disabled(isMLXDownloading)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
@@ -208,6 +247,7 @@ struct SettingsView: View {
                         dismiss()
                     }
                     .buttonStyle(.glassProminent)
+                    .disabled(isMLXDownloading)
                 }
             }
         }
@@ -274,6 +314,7 @@ struct SettingsView: View {
             profile.favoriteColorHex = "#1E2D4D"
             profile.themeID = "oberon"
             profile.selectedVoiceID = ""
+            profile.selectedModelBackend = "foundation"
             profile.hasCompletedOnboarding = false
         }
 

@@ -41,4 +41,11 @@ extension SuggestedReply {
             SuggestedReply(text: "What else is interesting here?"),
         ]
     }
+
+    static func forWikipedia() -> [SuggestedReply] {
+        [
+            SuggestedReply(text: "Tell me more"),
+            SuggestedReply(text: "Related topics?"),
+        ]
+    }
 }

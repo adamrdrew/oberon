@@ -12,6 +12,7 @@ class UserProfile {
     var favoriteColorHex: String = "#1E2D4D"
     var themeID: String = "oberon"
     var selectedVoiceID: String = ""
+    var selectedModelBackend: String = "foundation"
     var hasCompletedOnboarding: Bool = false
 
     var favoriteColor: Color {
