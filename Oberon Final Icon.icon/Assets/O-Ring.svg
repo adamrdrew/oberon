@@ -1,0 +1,12 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- O-Ring: annulus centered at 512,512. Outer r=310, Inner r=155. -->
+  <!-- Constructed as two concentric circles with even-odd fill rule -->
+  <path fill-rule="evenodd" d="
+    M 512 202
+    A 310 310 0 1 1 511.99 202
+    Z
+    M 512 357
+    A 155 155 0 1 0 512.01 357
+    Z
+  " fill="#E0E0E0" style="fill:#E0E0E0;fill:color(display-p3 0.87843 0.87843 0.87843);fill-opacity:1;"/>
+</svg>

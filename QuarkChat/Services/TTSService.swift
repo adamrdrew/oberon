@@ -48,9 +48,7 @@ final class TTSService: NSObject {
     }
 
     func stop() {
-        if synthesizer.isSpeaking {
-            synthesizer.stopSpeaking(at: .immediate)
-        }
+        synthesizer.stopSpeaking(at: .immediate)
         isSpeaking = false
         currentMessageID = nil
     }
@@ -75,7 +73,7 @@ final class TTSService: NSObject {
     }
 }
 
-extension TTSService: @preconcurrency AVSpeechSynthesizerDelegate {
+extension TTSService: AVSpeechSynthesizerDelegate {
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         Task { @MainActor in
             self.isSpeaking = false

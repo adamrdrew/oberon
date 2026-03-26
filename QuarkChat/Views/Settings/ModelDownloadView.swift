@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ModelDownloadView: View {
+    let modelType: ModelBackendType
     @State private var mlxManager = MLXModelManager.shared
 
     var body: some View {
@@ -12,7 +13,7 @@ struct ModelDownloadView: View {
                     .frame(width: 28)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Qwen3-4B")
+                    Text(MLXModelManager.modelDisplayName(for: modelType))
                         .font(OTheme.body)
                         .foregroundStyle(OTheme.primary)
                     Text(statusText)
@@ -25,7 +26,7 @@ struct ModelDownloadView: View {
                 actionButton
             }
 
-            if case .downloading(let progress) = mlxManager.state {
+            if case .downloading(let progress) = mlxManager.state(for: modelType) {
                 ProgressView(value: progress)
                     .tint(OTheme.accent)
             }
@@ -36,8 +37,12 @@ struct ModelDownloadView: View {
 
     // MARK: - Computed Properties
 
+    private var currentState: MLXModelManager.ModelState {
+        mlxManager.state(for: modelType)
+    }
+
     private var iconName: String {
-        switch mlxManager.state {
+        switch currentState {
         case .notDownloaded: "arrow.down.circle"
         case .downloading: "arrow.down.circle"
         case .downloaded: "checkmark.circle"
@@ -48,8 +53,8 @@ struct ModelDownloadView: View {
     }
 
     private var statusText: String {
-        switch mlxManager.state {
-        case .notDownloaded: "~2.3 GB download"
+        switch currentState {
+        case .notDownloaded: MLXModelManager.modelDownloadSize(for: modelType) + " download"
         case .downloading(let p): "Downloading... \(Int(p * 100))%"
         case .downloaded: "Downloaded, not loaded"
         case .loading: "Loading into memory..."
@@ -60,10 +65,10 @@ struct ModelDownloadView: View {
 
     @ViewBuilder
     private var actionButton: some View {
-        switch mlxManager.state {
+        switch currentState {
         case .notDownloaded:
             Button("Download") {
-                Task { await mlxManager.downloadAndLoad() }
+                Task { await mlxManager.downloadAndLoad(for: modelType) }
             }
             .buttonStyle(.glassProminent)
 
@@ -73,7 +78,7 @@ struct ModelDownloadView: View {
 
         case .downloaded:
             Button("Load") {
-                Task { try? await mlxManager.loadModel() }
+                Task { try? await mlxManager.loadModel(for: modelType) }
             }
             .buttonStyle(.glassProminent)
 
@@ -83,13 +88,13 @@ struct ModelDownloadView: View {
 
         case .loaded:
             Button("Remove") {
-                mlxManager.unloadModel()
+                mlxManager.unloadModel(for: modelType)
             }
             .foregroundStyle(OTheme.signalRed)
 
         case .error:
             Button("Retry") {
-                Task { await mlxManager.downloadAndLoad() }
+                Task { await mlxManager.downloadAndLoad(for: modelType) }
             }
             .buttonStyle(.glassProminent)
         }

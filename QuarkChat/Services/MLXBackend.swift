@@ -4,15 +4,20 @@ import MLXLLM
 import MLXLMCommon
 @preconcurrency import FoundationModels
 
-/// ChatBackend implementation using MLX with Qwen3-4B.
+/// ChatBackend implementation using MLX with Qwen3 models.
 /// Uses ChatSession for multi-turn conversation with KV cache.
 /// Tool calls are detected via `streamDetails` and dispatched through `ToolRegistry`.
 final class MLXBackend: ChatBackend, @unchecked Sendable {
+    private let modelType: ModelBackendType
     private var chatSession: ChatSession?
     private var transcript = MLXTranscript()
     private var toolDefinitions: [ToolDefinition] = []
     private var currentInstructions: String = ""
     private var evictionObserver: NSObjectProtocol?
+
+    init(modelType: ModelBackendType = .mlx) {
+        self.modelType = modelType
+    }
 
     deinit {
         if let evictionObserver {
@@ -113,21 +118,24 @@ final class MLXBackend: ChatBackend, @unchecked Sendable {
 
             let finalText = MLXToolCallParser.stripThinkingBlocks(followUpText)
             transcript.addAssistant(finalText)
-            await MLXModelManager.shared.flushCache()
+            MLXModelManager.shared.flushCache()
             return finalText
         }
 
         let finalText = MLXToolCallParser.stripThinkingBlocks(fullText)
 
         transcript.addAssistant(finalText)
-        await MLXModelManager.shared.flushCache()
+        MLXModelManager.shared.flushCache()
         return finalText
     }
 
     // MARK: - Compaction
 
     var needsCompaction: Bool {
-        transcript.estimatedTokens > TokenBudget.mlxCompactionThreshold
+        let threshold = modelType == .mlxBalanced
+            ? TokenBudget.mlxBalancedCompactionThreshold
+            : TokenBudget.mlxCompactionThreshold
+        return transcript.estimatedTokens > threshold
     }
 
     func compactTranscript(instructions: String) async {
@@ -146,7 +154,7 @@ final class MLXBackend: ChatBackend, @unchecked Sendable {
             .map { "\($0.role.capitalized): \($0.content)" }
             .joined(separator: "\n")
 
-        guard let container = MLXModelManager.shared.container else { return }
+        guard let container = try? await MLXModelManager.shared.loadModel(for: modelType) else { return }
 
         let summarySession = ChatSession(
             container,
@@ -191,7 +199,7 @@ final class MLXBackend: ChatBackend, @unchecked Sendable {
 
     func generateStarters(recentTopics: [String]) async -> [String] {
         guard !recentTopics.isEmpty,
-              let container = try? await MLXModelManager.shared.loadModel() else { return [] }
+              let container = try? await MLXModelManager.shared.loadModel(for: modelType) else { return [] }
 
         let session = ChatSession(
             container,
@@ -218,7 +226,7 @@ final class MLXBackend: ChatBackend, @unchecked Sendable {
     }
 
     func generateTitle(firstUserMessage: String) async -> String {
-        guard let container = try? await MLXModelManager.shared.loadModel() else { return "New Chat" }
+        guard let container = try? await MLXModelManager.shared.loadModel(for: modelType) else { return "New Chat" }
 
         let session = ChatSession(
             container,
@@ -245,7 +253,7 @@ final class MLXBackend: ChatBackend, @unchecked Sendable {
     /// Build or rebuild the ChatSession from current transcript and instructions.
     /// Called during init and after memory eviction when the user returns.
     private func buildSession(instructions: String) async {
-        guard let container = try? await MLXModelManager.shared.loadModel() else { return }
+        guard let container = try? await MLXModelManager.shared.loadModel(for: modelType) else { return }
 
         MLX.Memory.cacheLimit = 20 * 1024 * 1024
 

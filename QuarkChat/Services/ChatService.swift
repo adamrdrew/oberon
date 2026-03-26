@@ -30,8 +30,10 @@ final class ChatService {
         switch backendType {
         case .foundation:
             activeBackend = FoundationModelBackend()
+        case .mlxBalanced:
+            activeBackend = MLXBackend(modelType: .mlxBalanced)
         case .mlx:
-            activeBackend = MLXBackend()
+            activeBackend = MLXBackend(modelType: .mlx)
         }
 
         Task {

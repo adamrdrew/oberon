@@ -13,6 +13,8 @@ enum PromptAssembler {
         switch backendType {
         case .foundation:
             toolGuidance = "Only use tools when clearly needed — for current events, recent news, or something you're unsure about. For general knowledge, science, history, trivia, or conversation, just answer directly."
+        case .mlxBalanced:
+            toolGuidance = "Only use tools when clearly needed — for current events, recent news, or something you're unsure about. For general knowledge, science, history, trivia, or conversation, just answer directly. Invoke tools directly — never announce intent."
         case .mlx:
             toolGuidance = "Use your tools to enrich responses with visual content. Call wikipedia for any notable topic. Call image_search when the subject is visual. Call video_search when it could be watched. Call web_search for current events or uncertainty. Call read_url for URLs. Invoke tools directly — never announce intent. For greetings or simple chat, respond without tools."
         }

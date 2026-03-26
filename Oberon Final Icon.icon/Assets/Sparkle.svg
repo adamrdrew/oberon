@@ -1,0 +1,18 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Retro 4-point sparkle at upper-right area -->
+  <g>
+    <!-- Vertical bar -->
+    <rect x="708" y="248" width="5" height="44" rx="2.5" fill="#E86530" style="fill:#E86530;fill:color(display-p3 0.90980 0.39608 0.18824);fill-opacity:1;"/>
+    <!-- Horizontal bar -->
+    <rect x="689" y="267.5" width="44" height="5" rx="2.5" fill="#E86530" style="fill:#E86530;fill:color(display-p3 0.90980 0.39608 0.18824);fill-opacity:1;"/>
+    <!-- Diagonal bar 1 -->
+    <rect x="697" y="254" width="3.5" height="32" rx="1.75" transform="rotate(45 698.75 270)" fill="#E86530" style="fill:#E86530;fill:color(display-p3 0.90980 0.39608 0.18824);fill-opacity:0.7;"/>
+    <!-- Diagonal bar 2 -->
+    <rect x="697" y="254" width="3.5" height="32" rx="1.75" transform="rotate(-45 698.75 270)" fill="#E86530" style="fill:#E86530;fill:color(display-p3 0.90980 0.39608 0.18824);fill-opacity:0.7;"/>
+  </g>
+  <!-- Smaller teal sparkle lower-left -->
+  <g>
+    <rect x="308" y="726" width="4" height="28" rx="2" fill="#20A6A0" style="fill:#20A6A0;fill:color(display-p3 0.12549 0.65098 0.62745);fill-opacity:0.5;"/>
+    <rect x="296" y="738" width="28" height="4" rx="2" fill="#20A6A0" style="fill:#20A6A0;fill:color(display-p3 0.12549 0.65098 0.62745);fill-opacity:0.5;"/>
+  </g>
+</svg>

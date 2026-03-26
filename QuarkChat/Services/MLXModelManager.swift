@@ -37,15 +37,30 @@ final class MLXModelManager {
         }
     }
 
-    private(set) var state: ModelState = .notDownloaded
-    private(set) var container: ModelContainer?
+    /// Per-model state and containers, keyed by ModelBackendType.
+    private(set) var states: [ModelBackendType: ModelState] = [
+        .mlxBalanced: .notDownloaded,
+        .mlx: .notDownloaded,
+    ]
+    private var containers: [ModelBackendType: ModelContainer] = [:]
+    private var downloadedFlags: [ModelBackendType: Bool] = [
+        .mlxBalanced: false,
+        .mlx: false,
+    ]
+    private var loadTasks: [ModelBackendType: Task<ModelContainer, Error>] = [:]
 
-    /// Whether the model files are cached on disk (can reload without downloading).
-    private(set) var isDownloaded: Bool = false
+    /// The currently active model type (set by ChatService when initializing a session).
+    var activeModelType: ModelBackendType = .mlx
 
-    static let modelConfiguration = LLMRegistry.qwen3_4b_4bit
+    /// Convenience accessors for the active model.
+    var state: ModelState { states[activeModelType] ?? .notDownloaded }
+    var container: ModelContainer? { containers[activeModelType] }
+    var isDownloaded: Bool { downloadedFlags[activeModelType] ?? false }
 
-    private var loadTask: Task<ModelContainer, Error>?
+    static let modelConfigurations: [ModelBackendType: ModelConfiguration] = [
+        .mlxBalanced: LLMRegistry.qwen3_1_7b_4bit,
+        .mlx: LLMRegistry.qwen3_4b_4bit,
+    ]
 
     private init() {
         #if canImport(UIKit)
@@ -68,103 +83,144 @@ final class MLXModelManager {
         #endif
     }
 
-    // MARK: - Download & Load
+    // MARK: - Configuration
 
-    /// Download model files and load into memory in one step.
-    /// Progress is reported through state changes.
-    func downloadAndLoad() async {
-        guard state == .notDownloaded || state == .downloaded || {
-            if case .error = state { return true }
-            return false
-        }() else { return }
+    static func modelConfiguration(for type: ModelBackendType) -> ModelConfiguration {
+        modelConfigurations[type] ?? LLMRegistry.qwen3_4b_4bit
+    }
 
-        state = .downloading(progress: 0)
-
-        MLX.Memory.cacheLimit = 20 * 1024 * 1024
-
-        do {
-            let result = try await LLMModelFactory.shared.loadContainer(
-                configuration: Self.modelConfiguration
-            ) { [weak self] progress in
-                Task { @MainActor [weak self] in
-                    self?.state = .downloading(progress: progress.fractionCompleted)
-                }
-            }
-            container = result
-            isDownloaded = true
-            state = .loaded
-        } catch {
-            state = .error(error.localizedDescription)
+    static func modelDisplayName(for type: ModelBackendType) -> String {
+        switch type {
+        case .mlxBalanced: "Qwen3-1.7B"
+        case .mlx: "Qwen3-4B"
+        default: "Unknown"
         }
     }
 
-    /// Load model into memory (assumes files already cached from prior download).
-    func loadModel() async throws -> ModelContainer {
-        if let container { return container }
-
-        if let loadTask {
-            return try await loadTask.value
+    static func modelDownloadSize(for type: ModelBackendType) -> String {
+        switch type {
+        case .mlxBalanced: "~1 GB"
+        case .mlx: "~2.3 GB"
+        default: ""
         }
+    }
 
-        state = .loading
+    // MARK: - State for specific model
+
+    func state(for type: ModelBackendType) -> ModelState {
+        states[type] ?? .notDownloaded
+    }
+
+    func isDownloaded(for type: ModelBackendType) -> Bool {
+        downloadedFlags[type] ?? false
+    }
+
+    // MARK: - Download & Load
+
+    func downloadAndLoad(for type: ModelBackendType? = nil) async {
+        let modelType = type ?? activeModelType
+        let currentState = states[modelType] ?? .notDownloaded
+
+        guard currentState == .notDownloaded || currentState == .downloaded || {
+            if case .error = currentState { return true }
+            return false
+        }() else { return }
+
+        states[modelType] = .downloading(progress: 0)
 
         MLX.Memory.cacheLimit = 20 * 1024 * 1024
 
-        let task = Task<ModelContainer, Error> {
-            try await LLMModelFactory.shared.loadContainer(
-                configuration: Self.modelConfiguration
+        let config = Self.modelConfiguration(for: modelType)
+
+        do {
+            let result = try await LLMModelFactory.shared.loadContainer(
+                configuration: config
             ) { [weak self] progress in
                 Task { @MainActor [weak self] in
-                    // Show download progress if downloading for the first time
+                    self?.states[modelType] = .downloading(progress: progress.fractionCompleted)
+                }
+            }
+            containers[modelType] = result
+            downloadedFlags[modelType] = true
+            states[modelType] = .loaded
+        } catch {
+            states[modelType] = .error(error.localizedDescription)
+        }
+    }
+
+    func loadModel(for type: ModelBackendType? = nil) async throws -> ModelContainer {
+        let modelType = type ?? activeModelType
+
+        if let existing = containers[modelType] { return existing }
+
+        if let loadTask = loadTasks[modelType] {
+            return try await loadTask.value
+        }
+
+        states[modelType] = .loading
+
+        MLX.Memory.cacheLimit = 20 * 1024 * 1024
+
+        let config = Self.modelConfiguration(for: modelType)
+
+        let task = Task<ModelContainer, Error> {
+            try await LLMModelFactory.shared.loadContainer(
+                configuration: config
+            ) { [weak self] progress in
+                Task { @MainActor [weak self] in
                     if progress.fractionCompleted < 1.0 {
-                        self?.state = .downloading(progress: progress.fractionCompleted)
+                        self?.states[modelType] = .downloading(progress: progress.fractionCompleted)
                     }
                 }
             }
         }
-        loadTask = task
+        loadTasks[modelType] = task
 
         do {
             let result = try await task.value
-            container = result
-            isDownloaded = true
-            state = .loaded
-            loadTask = nil
+            containers[modelType] = result
+            downloadedFlags[modelType] = true
+            states[modelType] = .loaded
+            loadTasks[modelType] = nil
             return result
         } catch {
-            state = .error(error.localizedDescription)
-            loadTask = nil
+            states[modelType] = .error(error.localizedDescription)
+            loadTasks[modelType] = nil
             throw error
         }
     }
 
     // MARK: - Memory Management
 
-    /// Notification posted when the model is evicted from memory.
-    /// Backends should observe this to release their sessions.
     static let didEvictNotification = Notification.Name("MLXModelManagerDidEvict")
 
-    /// Evict model from GPU/RAM but keep files on disk.
-    /// Used on iOS background transition and memory warnings.
+    /// Evict all models from GPU/RAM but keep files on disk.
     func evictFromMemory() {
-        guard container != nil else { return }
-        container = nil
-        loadTask = nil
-        NotificationCenter.default.post(name: Self.didEvictNotification, object: nil)
-        MLX.Memory.clearCache()
-        state = isDownloaded ? .downloaded : .notDownloaded
+        var didEvict = false
+        for modelType in [ModelBackendType.mlxBalanced, .mlx] {
+            if containers[modelType] != nil {
+                containers[modelType] = nil
+                loadTasks[modelType] = nil
+                states[modelType] = (downloadedFlags[modelType] ?? false) ? .downloaded : .notDownloaded
+                didEvict = true
+            }
+        }
+        if didEvict {
+            NotificationCenter.default.post(name: Self.didEvictNotification, object: nil)
+            MLX.Memory.clearCache()
+        }
     }
 
-    /// Remove model entirely (files + memory). Used by the "Remove" button.
-    func unloadModel() {
-        container = nil
-        loadTask = nil
-        isDownloaded = false
+    /// Remove a specific model entirely (files + memory).
+    func unloadModel(for type: ModelBackendType? = nil) {
+        let modelType = type ?? activeModelType
+        containers[modelType] = nil
+        loadTasks[modelType] = nil
+        downloadedFlags[modelType] = false
         MLX.Memory.clearCache()
-        state = .notDownloaded
+        states[modelType] = .notDownloaded
     }
 
-    /// Flush GPU cache after generation to reduce memory footprint between turns.
     func flushCache() {
         MLX.Memory.clearCache()
     }

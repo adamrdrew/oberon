@@ -13,8 +13,11 @@ struct SettingsView: View {
     @State private var showDeleteConfirmation = false
 
     private var isMLXDownloading: Bool {
-        if case .downloading = MLXModelManager.shared.state { return true }
-        if case .loading = MLXModelManager.shared.state { return true }
+        for type in [ModelBackendType.mlxBalanced, .mlx] {
+            let s = MLXModelManager.shared.state(for: type)
+            if case .downloading = s { return true }
+            if case .loading = s { return true }
+        }
         return false
     }
 
@@ -63,6 +66,17 @@ struct SettingsView: View {
                             Divider().padding(.leading, 16)
 
                             ModelOptionRow(
+                                type: .mlxBalanced,
+                                isSelected: viewModel.selectedModelBackend == .mlxBalanced,
+                                isAvailable: true
+                            ) {
+                                Haptics.selection()
+                                viewModel.selectedModelBackend = .mlxBalanced
+                            }
+
+                            Divider().padding(.leading, 16)
+
+                            ModelOptionRow(
                                 type: .mlx,
                                 isSelected: viewModel.selectedModelBackend == .mlx,
                                 isAvailable: true
@@ -73,8 +87,8 @@ struct SettingsView: View {
                         }
                         .background(.ultraThinMaterial, in: .rect(cornerRadius: OTheme.cornerRadiusCard))
 
-                        if viewModel.selectedModelBackend == .mlx {
-                            ModelDownloadView()
+                        if viewModel.selectedModelBackend.isMLX {
+                            ModelDownloadView(modelType: viewModel.selectedModelBackend)
                         }
                     }
 

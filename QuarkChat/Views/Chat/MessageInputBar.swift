@@ -106,6 +106,13 @@ struct MessageInputBar: View {
                 .textFieldStyle(.plain)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
+                .onKeyPress(.return, phases: .down) { keyPress in
+                    if keyPress.modifiers.contains(.shift) {
+                        text += "\n"
+                        return .handled
+                    }
+                    return .ignored
+                }
                 .onSubmit {
                     if !isGenerating && !isEmpty {
                         Haptics.tap()
@@ -127,7 +134,7 @@ struct MessageInputBar: View {
                         .contentTransition(.symbolEffect(.replace))
                 }
                 .padding(.trailing, 8)
-            } else if let speechService, isEmpty {
+            } else if speechService != nil, isEmpty {
                 // Mic button — enters voice mode
                 Button {
                     onToggleVoiceMode?()

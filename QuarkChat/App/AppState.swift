@@ -15,8 +15,9 @@ final class AppState {
 
     var isModelAvailable: Bool {
         if case .available = modelAvailability { return true }
-        // Allow access if MLX model is loaded even without Foundation Models
-        if MLXModelManager.shared.state == .loaded { return true }
+        // Allow access if any MLX model is loaded even without Foundation Models
+        if MLXModelManager.shared.state(for: .mlxBalanced) == .loaded { return true }
+        if MLXModelManager.shared.state(for: .mlx) == .loaded { return true }
         return false
     }
 

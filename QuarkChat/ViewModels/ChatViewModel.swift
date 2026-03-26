@@ -103,7 +103,7 @@ final class ChatViewModel {
             URLReaderTool(),
         ]
 
-        if backendType == .mlx {
+        if backendType.isMLX {
             tools.append(WikipediaTool())
         }
 
@@ -132,7 +132,7 @@ final class ChatViewModel {
                 let tool = URLReaderTool()
                 return try await tool.call(arguments: .init(url: url))
             }
-            if backendType == .mlx {
+            if backendType.isMLX {
                 await registry.register(name: "wikipedia") { args in
                     let topic = args["topic"] as? String ?? ""
                     let tool = WikipediaTool()
@@ -169,7 +169,7 @@ final class ChatViewModel {
             ),
         ]
 
-        if backendType == .mlx {
+        if backendType.isMLX {
             definitions.append(ToolDefinition(
                 name: "wikipedia",
                 description: "Look up a topic on Wikipedia to show the user a rich article card.",
@@ -317,8 +317,10 @@ final class ChatViewModel {
         let stepPollTask = Task.detached { [weak self] in
             while !Task.isCancelled {
                 let steps = await ToolResultStore.shared.pipelineSteps
-                await MainActor.run {
-                    self?.livePipelineSteps = steps
+                if let self {
+                    await MainActor.run {
+                        self.livePipelineSteps = steps
+                    }
                 }
                 try? await Task.sleep(for: .milliseconds(200))
             }
@@ -501,9 +503,7 @@ final class ChatViewModel {
         switch action.type {
         case .directions:
             if let lat = action.latitude, let lon = action.longitude {
-                let coordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
-                let placemark = MKPlacemark(coordinate: coordinate)
-                let mapItem = MKMapItem(placemark: placemark)
+                let mapItem = MKMapItem(location: CLLocation(latitude: lat, longitude: lon), address: nil)
                 mapItem.name = action.subtitle
                 mapItem.openInMaps(launchOptions: [
                     MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving
