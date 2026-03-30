@@ -250,8 +250,8 @@ final class ChatViewModel {
             headlines = eveningHeadlines
         }
 
-        greetingHeadline = headlines.randomElement()!
-        greetingSubtitle = subtitles.randomElement()!
+        greetingHeadline = headlines.randomElement() ?? "Hello"
+        greetingSubtitle = subtitles.randomElement() ?? "How can I help?"
     }
 
     private func loadConversationStarters() async {

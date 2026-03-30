@@ -36,13 +36,17 @@ final class SpeechService {
 
     func startRecording() async {
         guard !isRecording else {
+            #if DEBUG
             print("[Speech] startRecording: already recording, skipping")
+            #endif
             return
         }
 
         let authorized = await requestPermission()
         guard authorized else {
+            #if DEBUG
             print("[Speech] startRecording: speech recognition not authorized")
+            #endif
             return
         }
 
@@ -50,10 +54,14 @@ final class SpeechService {
         // On iOS this is covered by AVAudioSession, but on macOS it must be explicit.
         let micAllowed = await AVAudioApplication.requestRecordPermission()
         guard micAllowed else {
+            #if DEBUG
             print("[Speech] startRecording: microphone permission denied")
+            #endif
             return
         }
+        #if DEBUG
         print("[Speech] startRecording: authorized (speech + mic)")
+        #endif
 
         AudioSessionHelper.activatePlaybackSession()
 
@@ -62,17 +70,23 @@ final class SpeechService {
         request.shouldReportPartialResults = true
 
         guard let recognizer = speechRecognizer, recognizer.isAvailable else {
+            #if DEBUG
             print("[Speech] startRecording: recognizer unavailable (recognizer=\(speechRecognizer != nil), available=\(speechRecognizer?.isAvailable ?? false))")
+            #endif
             return
         }
+        #if DEBUG
         print("[Speech] startRecording: recognizer available, locale=\(recognizer.locale)")
+        #endif
 
         recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
             Task { @MainActor in
                 guard let self else { return }
                 if let result {
                     self.transcribedText = result.bestTranscription.formattedString
+                    #if DEBUG
                     print("[Speech] partial: \"\(result.bestTranscription.formattedString)\" isFinal=\(result.isFinal)")
+                    #endif
 
                     if result.isFinal {
                         self.silenceTimer?.cancel()
@@ -90,7 +104,9 @@ final class SpeechService {
                     }
                 }
                 if let error {
+                    #if DEBUG
                     print("[Speech] recognition error: \(error)")
+                    #endif
                     self.silenceTimer?.cancel()
                     self.stopRecordingInternal()
                 }
@@ -99,7 +115,9 @@ final class SpeechService {
 
         let inputNode = engine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
+        #if DEBUG
         print("[Speech] inputNode format: sampleRate=\(recordingFormat.sampleRate) channels=\(recordingFormat.channelCount)")
+        #endif
 
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
             // Guard zero-size buffers (happen during engine shutdown)
@@ -128,9 +146,13 @@ final class SpeechService {
             recognitionRequest = request
             isRecording = true
             transcribedText = ""
+            #if DEBUG
             print("[Speech] startRecording: engine started successfully")
+            #endif
         } catch {
+            #if DEBUG
             print("[Speech] startRecording: engine start failed: \(error)")
+            #endif
             stopRecordingInternal()
         }
     }
