@@ -13,8 +13,9 @@ struct TokenBudgetTests {
     }
 
     @Test func compactionThresholdIsReasonable() {
-        // Threshold should be below the 4096 context window
+        // Threshold should be below the context window size
+        let contextSize = TokenBudget.foundationModelContextSize
         #expect(TokenBudget.compactionThreshold > 0)
-        #expect(TokenBudget.compactionThreshold < 4096)
+        #expect(TokenBudget.compactionThreshold < contextSize)
     }
 }

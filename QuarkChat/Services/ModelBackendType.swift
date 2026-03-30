@@ -7,9 +7,9 @@ enum ModelBackendType: String, Codable, CaseIterable, Sendable {
 
     var displayName: String {
         switch self {
-        case .foundation: "Simple"
-        case .mlxBalanced: "Balanced"
-        case .mlx: "Advanced"
+        case .foundation: "Good"
+        case .mlxBalanced: "Better"
+        case .mlx: "Best"
         }
     }
 

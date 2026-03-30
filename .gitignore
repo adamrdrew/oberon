@@ -1,2 +1,6 @@
 # Reference documentation (downloaded, not source)
 references/
+
+# Claude Code local config
+.agents/
+skills-lock.json

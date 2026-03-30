@@ -29,10 +29,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		66563C502F75FAEB00AA767E /* OberonTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OberonTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		668DD6392F579FFF001AFDA9 /* Oberon 3.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "Oberon 3.icon"; sourceTree = "<group>"; };
 		668DEA622F5B4504001AFDA9 /* Oberon Final Icon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "Oberon Final Icon.icon"; sourceTree = "<group>"; };
 		668DEA652F5B45C7001AFDA9 /* Oberon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Oberon.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA0000000000000000000001 /* OberonTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = OberonTests.xctest; path = /Users/adam/Development/QuarkChat/build/Debug/Oberon.app/Contents/PlugIns/OberonTests.xctest; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -93,6 +93,7 @@
 				668DD6392F579FFF001AFDA9 /* Oberon 3.icon */,
 				668DEA622F5B4504001AFDA9 /* Oberon Final Icon.icon */,
 				668DEA652F5B45C7001AFDA9 /* Oberon.app */,
+				66563C502F75FAEB00AA767E /* OberonTests.xctest */,
 			);
 			sourceTree = "<group>";
 		};
@@ -147,7 +148,7 @@
 			packageProductDependencies = (
 			);
 			productName = OberonTests;
-			productReference = AA0000000000000000000001 /* OberonTests.xctest */;
+			productReference = 66563C502F75FAEB00AA767E /* OberonTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -286,10 +287,10 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MACOSX_DEPLOYMENT_TARGET = 26.4;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = adamrdrew.QuarkChat;
 				PRODUCT_NAME = Oberon;
@@ -358,10 +359,10 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MACOSX_DEPLOYMENT_TARGET = 26.4;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = adamrdrew.QuarkChat;
 				PRODUCT_NAME = Oberon;

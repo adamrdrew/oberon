@@ -33,7 +33,7 @@ final class FoundationModelBackend: ChatBackend, @unchecked Sendable {
                 tools: tools,
                 instructions: instructions
             )
-            estimatedTokens = TokenBudget.estimateTokens(instructions)
+            estimatedTokens = await TokenBudget.tokenCount(for: instructions)
         }
 
         session?.prewarm()
